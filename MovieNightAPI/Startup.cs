@@ -16,6 +16,8 @@ namespace MovieNightAPI
 {
     public class Startup
     {
+        readonly string CORS_Policy = "CORS_Policy";
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -26,7 +28,14 @@ namespace MovieNightAPI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
+            services.AddCors(options =>
+            {
+                options.AddPolicy(name: CORS_Policy,
+                  builder =>
+                  {
+                      builder.AllowAnyHeader().AllowAnyOrigin().AllowAnyMethod();
+                  });
+            });
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
@@ -47,6 +56,8 @@ namespace MovieNightAPI
             app.UseHttpsRedirection();
 
             app.UseRouting();
+
+            app.UseCors(CORS_Policy);  // Specific placement
 
             app.UseAuthorization();
 
