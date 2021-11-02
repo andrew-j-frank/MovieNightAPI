@@ -1,34 +1,32 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using MovieNightAPI.Models;
 using MovieNightAPI.DataAccess;
+using MovieNightAPI.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-
-namespace SpikeExerciseAPI.Controllers
+namespace MovieNightAPI.Controllers
 {
     [Route("[controller]")]
     [ApiController]
-    public class LoginController : ControllerBase
+    public class SignUpController : ControllerBase
     {
         private IDataAccess _dataAccess;
 
-        public LoginController(IDataAccess dataAccess)
+        public SignUpController(IDataAccess dataAccess)
         {
             this._dataAccess = dataAccess;
         }
 
-        // POST /login
+        // POST /signup
         [ProducesResponseType(typeof(User), StatusCodes.Status200OK)]
         [HttpPost]
-        public IActionResult Post([FromBody] Login login)
+        public IActionResult Post([FromBody] SignUp signUp)
         {
-            var result = _dataAccess.Login(login);
-            if (!result.error)
+            var result = _dataAccess.SignUp(signUp);
+            if(!result.error)
             {
                 return Ok(result.returnObject);
             }

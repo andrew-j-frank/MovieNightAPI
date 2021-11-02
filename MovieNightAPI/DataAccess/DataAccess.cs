@@ -27,7 +27,7 @@ namespace MovieNightAPI.DataAccess
 
         #region Login
 
-        public User Login(Login login)
+        public DataAccessResult Login(Login login)
         {
             using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
             {
@@ -39,21 +39,40 @@ namespace MovieNightAPI.DataAccess
                         var user = users.First();
                         if (user.password == GenerateSaltedHash(login.password, user.salt))
                         {
-                            return User.UserDBToUser(user);
+                            return new DataAccessResult()
+                            {
+                                returnObject = User.UserDBToUser(user)
+                            };
                         }
                         else
                         {
-                            return null;
+                            return new DataAccessResult()
+                            {
+                                error = true,
+                                statusCode = 404,
+                                message = "username and password combination not found"
+                            };
                         }
                     }
                     else
                     {
-                        return null;
+                        return new DataAccessResult()
+                        {
+                            error = true,
+                            statusCode = 500,
+                            message = "multiple users with this username"
+                        };
                     }
                 }
-                catch (SqlException)
+                catch (SqlException ex)
                 {
-                    return null;
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
                 }
             }
         }
@@ -62,7 +81,7 @@ namespace MovieNightAPI.DataAccess
 
         #region SignUp
 
-        public User SignUp(SignUp signUp)
+        public DataAccessResult SignUp(SignUp signUp)
         {
             var salt = GenerateSalt();
             var hashedPassword = GenerateSaltedHash(signUp.password, salt);
@@ -76,21 +95,40 @@ namespace MovieNightAPI.DataAccess
                         var users = connection.Query<User>($"select * from Users where username = @username", new { username = signUp.username }).ToList();
                         if (users.Count == 1)
                         {
-                            return users.First();
+                            return new DataAccessResult()
+                            {
+                                returnObject = users.First()
+                            };
                         }
                         else
                         {
-                            return null;
+                            return new DataAccessResult()
+                            {
+                                error = true,
+                                statusCode = 500,
+                                message = "multiple users with this username"
+                            };
                         }
                     }
                     else
                     {
-                        return null;
+                        return new DataAccessResult()
+                        {
+                            error = true,
+                            statusCode = 500,
+                            message = "multiple rows changed. THIS SHOULD NEVER HAPPEN"
+                        };
                     }
                 }
-                catch (SqlException)
+                catch (SqlException ex)
                 {
-                    return null;
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
                 }
             }
         }

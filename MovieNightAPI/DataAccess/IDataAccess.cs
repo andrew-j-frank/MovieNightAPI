@@ -8,8 +8,8 @@ namespace MovieNightAPI.DataAccess
 {
     public interface IDataAccess
     {
-        public User Login(Login login);
+        public DataAccessResult Login(Login login);
 
-        public User SignUp(SignUp signUp);
+        public DataAccessResult SignUp(SignUp signUp);
     }
 }
