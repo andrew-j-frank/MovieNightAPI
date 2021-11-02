@@ -32,7 +32,7 @@ namespace MovieNightAPI.Controllers
             }
             else
             {
-                return StatusCode(result.statusCode, result.message);
+                return StatusCode(result.statusCode, new { message = result.message });
             }
         }
     }

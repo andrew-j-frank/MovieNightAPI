@@ -89,7 +89,7 @@ namespace MovieNightAPI.DataAccess
             {
                 try
                 {
-                    var rows = connection.Execute($"insert into Users (username,password,salt) values (@username,@password,@salt)", new { username = signUp.username, password = hashedPassword, salt = salt });
+                    var rows = connection.Execute($"insert into Users (username,password,salt,email) values (@username,@password,@salt,@email)", new { username = signUp.username, password = hashedPassword, salt = salt, email = signUp.email });
                     if (rows == 1)
                     {
                         var users = connection.Query<User>($"select * from Users where username = @username", new { username = signUp.username }).ToList();

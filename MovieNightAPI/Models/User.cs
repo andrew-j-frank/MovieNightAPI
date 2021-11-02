@@ -9,12 +9,14 @@ namespace MovieNightAPI.Models
     {
         public int user_id { get; set; }
         public string username { get; set; }
+        public string email { get; set; }
         public static User UserDBToUser(UserDB v)
         {
             return new User()
             {
                 user_id = v.user_id,
-                username = v.username
+                username = v.username,
+                email = v.email
             };
         }
     }
