@@ -149,47 +149,5 @@ namespace SpikeExerciseAPI.Controllers
                 return StatusCode(result.statusCode, new { message = result.message });
             }
         }
-
-
-
-
-
-
-
-
-
-        // POST /group join
-        [ProducesResponseType(typeof(Group), StatusCodes.Status200OK)]
-        [HttpPost]
-        public IActionResult Post([FromBody] int group_id, int user_id, string alias)
-        {
-            var result = _dataAccess.JoinGroup(group_id, user_id, alias);
-            if (!result.error)
-            {
-                return Ok(result.returnObject);
-            }
-            else
-            {
-                return StatusCode(result.statusCode, new { message = result.message });
-            }
-        }
-
-        // PATCH /group alias
-        [ProducesResponseType(typeof(Group), StatusCodes.Status200OK)]
-        [HttpPatch]
-        public IActionResult Patch([FromBody] int group_id, int user_id, string alias)
-        {
-            var result = _dataAccess.ChangeAlias(group_id, user_id, alias);
-            if (!result.error)
-            {
-                return Ok(result.returnObject);
-            }
-            else
-            {
-                return StatusCode(result.statusCode, new { message = result.message });
-            }
-        }
-
-        //TODO(speters): leaveGroup(int group_id, int user_id)
     }
 }
