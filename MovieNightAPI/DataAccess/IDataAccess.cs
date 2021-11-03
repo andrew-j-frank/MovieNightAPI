@@ -30,5 +30,21 @@ namespace MovieNightAPI.DataAccess
 
         public DataAccessResult GetGroupRating(int tmdb_movie_id, int group_id);
 
+        public DataAccessResult CreateEvent(GroupEvent group_event);
+
+        public DataAccessResult GetGroupEvents(int group_id);
+
+        public DataAccessResult JoinEvent(int group_id, int event_id);
+
+        public DataAccessResult LeaveEvent(int group_id, int event_id);
+
+        public DataAccessResult GetUserEvents(int user_id);
+
+        public DataAccessResult GetUserGroupEvents(int user_id, int group_id);
+
+        public DataAccessResult GetRSVP(int event_id);
+
+        public DataAccessResult GetMoviesEvent(int event_id);
+
     }
 }

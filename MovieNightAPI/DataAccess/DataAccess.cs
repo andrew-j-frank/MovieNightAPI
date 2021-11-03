@@ -281,7 +281,7 @@ namespace MovieNightAPI.DataAccess
             {
                 try
                 {
-                    IEnumerable<Group> groups = connection.Query<Group>($"selct g.* from users u inner join group_users gu on u.user_id = gu.user_id inner join groups g on gu.group_id = g.group_id where u.user_id = @user_id", new { user_id = user_id });
+                    IEnumerable<Group> groups = connection.Query<Group>($"select g.* from users u inner join group_users gu on u.user_id = gu.user_id inner join groups g on gu.group_id = g.group_id where u.user_id = @user_id", new { user_id = user_id });
                     return new DataAccessResult()
                     {
                         returnObject = groups
@@ -385,7 +385,7 @@ namespace MovieNightAPI.DataAccess
                 try
                 {
                     // Should we check if there are no movies?
-                    IEnumerable<GroupMovies> movies = connection.Query<GroupMovies>($"selct * from group_movies where group_id = @group_id", new { group_id = group_id });
+                    IEnumerable<GroupMovies> movies = connection.Query<GroupMovies>($"select * from group_movies where group_id = @group_id", new { group_id = group_id });
                     return new DataAccessResult()
                     {
                         returnObject = movies
@@ -459,6 +459,244 @@ namespace MovieNightAPI.DataAccess
                     {
                         returnObject = avg_rating
                     };
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
+
+        #endregion
+
+        #region Event
+        public DataAccessResult CreateEvent(GroupEvent group_event)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    var event_id = connection.QuerySingle<int>($"insert into events (start_time, location, genre, tmdb_movie_id, organized_by, voting_mode) OUTPUT INSERTED.event_id values (@start_time, @location, @genre, @tmdb_movie_id, @organized_by, @voting_mode)", new { start_time = group_event.start_time, location = group_event.location, genre = group_event.genre, tmdb_movie_id = group_event.tmdb_movie_id, organized_by = group_event.organized_by, voting_mode = group_event.voting_mode });
+                    group_event.event_id = event_id;
+                    return new DataAccessResult()
+                    {
+                        returnObject = group_event
+                    };
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
+
+        public DataAccessResult GetGroupEvents(int group_id)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    // Should we check if there are no movies?
+                    IEnumerable<GroupEvent> events = connection.Query<GroupEvent>($"select * from events where group_id = @group_id", new { group_id = group_id });
+                    return new DataAccessResult()
+                    {
+                        returnObject = events
+                    };
+
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
+
+        public DataAccessResult JoinEvent(int user_id, int event_id)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    var rows = connection.Execute($"insert into rsvp (user_id,event_id,is_coming) values (@user_id,@event_id,1)", new { user_id = user_id, event_id = event_id });
+                    if (rows == 1)
+                    {
+                        return new DataAccessResult()
+                        {
+                            returnObject = null
+                        };
+                    }
+                    else
+                    {
+                        return new DataAccessResult()
+                        {
+                            error = true,
+                            statusCode = 500,
+                            message = "User could not be rsvpd."
+                        };
+                    }
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
+
+        public DataAccessResult LeaveEvent(int user_id, int event_id)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    var rows = connection.Execute($"update rsvp set is_coming = 0 where user_id = @user_id and event_id = @event_id", new { user_id = user_id, event_id = event_id });
+                    if (rows == 1)
+                    {
+                        return new DataAccessResult()
+                        {
+                            returnObject = null
+                        };
+                    }
+                    else
+                    {
+                        return new DataAccessResult()
+                        {
+                            error = true,
+                            statusCode = 500,
+                            message = "RSVP status could not be changed."
+                        };
+                    }
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
+
+        public DataAccessResult GetRSVP(int event_id)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    // Should we check if there are no movies?
+                    IEnumerable<string> rsvpd_aliases = connection.Query<string>($"select gu.alias from rsvp r inner join events e on r.event_id = e.event_id inner join group_users gu on r.user_id = gu.user_id and e.group_id = gu.group_id where r.event_id = @event_id", new { event_id = event_id });
+                    return new DataAccessResult()
+                    {
+                        returnObject = rsvpd_aliases
+                    };
+
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
+
+        public DataAccessResult GetUserEvents(int user_id)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    // Should we check if there are no movies?
+                    IEnumerable<GroupEvent> events = connection.Query<GroupEvent>($"select e.* from rsvp r inner join events e on r.event_id = e.event_id where r.user_id = @user_id", new { user_id = user_id });
+                    return new DataAccessResult()
+                    {
+                        returnObject = events
+                    };
+
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
+
+        public DataAccessResult GetUserGroupEvents(int user_id, int group_id)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    // Should we check if there are no movies?
+                    IEnumerable<GroupEvent> events = connection.Query<GroupEvent>($"select e.* from rsvp r inner join events e on r.event_id = e.event_id where r.user_id = @user_id and e.group_id = @group_id", new { user_id = user_id, group_id = group_id });
+                    return new DataAccessResult()
+                    {
+                        returnObject = events
+                    };
+
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
+
+        public DataAccessResult GetMoviesEvent(int event_id)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    // Should we check if there are no movies?
+                    IEnumerable<int> movies = connection.Query<int>($"select tmdb_movie_id from event_movies where event_id = @event_id", new { event_id = event_id });
+                    return new DataAccessResult()
+                    {
+                        returnObject = movies
+                    };
+
                 }
                 catch (SqlException ex)
                 {

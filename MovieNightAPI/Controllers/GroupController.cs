@@ -87,7 +87,7 @@ namespace SpikeExerciseAPI.Controllers
         // Iterate and get aliases for individual groups?
         // GET /group
         [ProducesResponseType(typeof(IEnumerable<Group>), StatusCodes.Status200OK)]
-        [HttpPost]
+        [HttpGet]
         public IActionResult Get([FromBody] int user_id)
         {
             var result = _dataAccess.GetGroups(user_id);

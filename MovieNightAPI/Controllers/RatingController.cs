@@ -41,7 +41,7 @@ namespace SpikeExerciseAPI.Controllers
 
         // Get /Ratings
         [ProducesResponseType(typeof(float), StatusCodes.Status200OK)]
-        [HttpPost]
+        [HttpGet]
         public IActionResult Get([FromBody] int tmdb_movie_id, int group_id)
         {
             var result = _dataAccess.GetGroupRating(tmdb_movie_id, group_id);
