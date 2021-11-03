@@ -610,7 +610,7 @@ namespace MovieNightAPI.DataAccess
                 try
                 {
                     // Should we check if there are no movies?
-                    IEnumerable<string> rsvpd_aliases = connection.Query<string>($"select gu.alias from rsvp r inner join events e on r.event_id = e.event_id inner join group_users gu on r.user_id = gu.user_id and e.group_id = gu.group_id where r.event_id = @event_id", new { event_id = event_id });
+                    IEnumerable<string> rsvpd_aliases = connection.Query<string>($"select gu.alias from rsvp r inner join events e on r.event_id = e.event_id inner join group_users gu on r.user_id = gu.user_id and e.group_id = gu.group_id where r.event_id = @event_id and r.is_coming = 1", new { event_id = event_id });
                     return new DataAccessResult()
                     {
                         returnObject = rsvpd_aliases
@@ -637,7 +637,7 @@ namespace MovieNightAPI.DataAccess
                 try
                 {
                     // Should we check if there are no movies?
-                    IEnumerable<GroupEvent> events = connection.Query<GroupEvent>($"select e.* from rsvp r inner join events e on r.event_id = e.event_id where r.user_id = @user_id", new { user_id = user_id });
+                    IEnumerable<GroupEvent> events = connection.Query<GroupEvent>($"select e.* from rsvp r inner join events e on r.event_id = e.event_id where r.user_id = @user_id and r.is_coming = 1", new { user_id = user_id });
                     return new DataAccessResult()
                     {
                         returnObject = events
@@ -664,7 +664,7 @@ namespace MovieNightAPI.DataAccess
                 try
                 {
                     // Should we check if there are no movies?
-                    IEnumerable<GroupEvent> events = connection.Query<GroupEvent>($"select e.* from rsvp r inner join events e on r.event_id = e.event_id where r.user_id = @user_id and e.group_id = @group_id", new { user_id = user_id, group_id = group_id });
+                    IEnumerable<GroupEvent> events = connection.Query<GroupEvent>($"select e.* from rsvp r inner join events e on r.event_id = e.event_id where r.user_id = @user_id and e.group_id = @group_id and r.is_coming = 1", new { user_id = user_id, group_id = group_id });
                     return new DataAccessResult()
                     {
                         returnObject = events
