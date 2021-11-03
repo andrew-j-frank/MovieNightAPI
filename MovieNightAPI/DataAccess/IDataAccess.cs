@@ -20,5 +20,15 @@ namespace MovieNightAPI.DataAccess
 
         public DataAccessResult GetGroups(int user_id);
 
+        public DataAccessResult AddGroupMovie(GroupMovies group_movies);
+
+        public DataAccessResult RemoveMovie(int group_id, int tmdb_movie_id);
+
+        public DataAccessResult GetMovies(int group_id);
+
+        public DataAccessResult RateMovie(MovieRatings movie_ratings);
+
+        public DataAccessResult GetGroupRating(int tmdb_movie_id, int group_id);
+
     }
 }

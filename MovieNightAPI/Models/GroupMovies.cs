@@ -5,11 +5,10 @@ using System.Threading.Tasks;
 
 namespace MovieNightAPI.Models
 {
-    public class Group
+    public class GroupMovies
     {
         public int group_id { get; set; }
-        public string group_name { get; set; }
-        public int created_by { get; set; }
-        public string alias { get; set; }
+        public int tmdb_movie_id { get; set; }
+        public int added_by { get; set; }
     }
 }

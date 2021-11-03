@@ -177,7 +177,7 @@ namespace MovieNightAPI.DataAccess
             {
                 try
                 {
-                    var group_id = connection.QuerySingle<int>($"insert into groups (user_id,phone,property_id,current_address,monthly_income,comment,status) OUTPUT INSERTED.group_id values (@user_id,@phone,@property_id,@current_address,@monthly_income,@comment,@status)", new { user_id = application.user_id, phone = application.phone, property_id = application.property_id, current_address = application.current_address, monthly_income = application.monthly_income, comment = application.comment, status = application.status });
+                    var group_id = connection.QuerySingle<int>($"insert into groups (group_name,created_by) OUTPUT INSERTED.group_id values (@group_name,@created_by)", new { group_name = group.group_name, created_by = group.created_by });
                     group.group_id = group_id;
                     return new DataAccessResult()
                     {
@@ -287,6 +287,178 @@ namespace MovieNightAPI.DataAccess
                         returnObject = groups
                     };
 
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
+
+        #endregion
+
+        #region Movies
+        public DataAccessResult AddGroupMovie(GroupMovies group_movies)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    var rows = connection.Execute($"insert into group_movies (group_id,tmdb_movie_id,added_by) values (@group_id,@tmdb_movie_id,@added_by)", new { group_id = group_movies.group_id, tmdb_movie_id = group_movies.tmdb_movie_id, added_by = group_movies.added_by });
+                    if (rows == 1)
+                    {
+                        return new DataAccessResult()
+                        {
+                            returnObject = group_movies
+                        };
+
+                    }
+                    else
+                    {
+                        return new DataAccessResult()
+                        {
+                            error = true,
+                            statusCode = 500,
+                            message = "multiple rows changed. THIS SHOULD NEVER HAPPEN"
+                        };
+                    }
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        // Likely, this movie already exists within this group
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
+
+        public DataAccessResult RemoveMovie(int group_id, int tmdb_movie_id)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    var rows = connection.Execute($"delete from group_movies where group_id = @group_id and tmdb_movie_id = @tmdb_movie_id", new { group_id = group_id, tmdb_movie_id = tmdb_movie_id });
+                    if (rows == 1)
+                    {
+                        return null;
+                    }
+                    else
+                    {
+                        return new DataAccessResult()
+                        {
+                            error = true,
+                            statusCode = 500,
+                            message = "The specified movie was not in the group's queue."
+                        };
+                    }
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        // Likely, this movie already exists within this group
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
+
+        public DataAccessResult GetMovies(int group_id)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    // Should we check if there are no movies?
+                    IEnumerable<GroupMovies> movies = connection.Query<GroupMovies>($"selct * from group_movies where group_id = @group_id", new { group_id = group_id });
+                    return new DataAccessResult()
+                    {
+                        returnObject = movies
+                    };
+
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
+
+        #endregion
+
+        #region Ratings
+
+        public DataAccessResult RateMovie(MovieRatings movie_ratings)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    var rows = connection.Execute($"insert into group_movie_ratings (group_id,user_id,tmdb_movie_id,rating) values (@group_id,@user_id,@tmdb_movie_id,@rating)", new { group_id = movie_ratings.group_id, user_id = movie_ratings.user_id, tmdb_movie_id = movie_ratings.tmdb_movie_id, rating = movie_ratings.rating });
+                    if (rows == 1)
+                    {
+                        return new DataAccessResult()
+                        {
+                            returnObject = movie_ratings
+                        };
+
+                    }
+                    else
+                    {
+                        return new DataAccessResult()
+                        {
+                            error = true,
+                            statusCode = 500,
+                            message = "multiple rows changed. THIS SHOULD NEVER HAPPEN"
+                        };
+                    }
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        // Likely, this user/movie/group combination already exists
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
+
+        public DataAccessResult GetGroupRating(int tmdb_movie_id, int group_id)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    var avg_rating = connection.QuerySingle<int>($"select avg(cast(rating as float)) from group_movie_ratings where tmdb_movie_id = @tmdb_movie_id and group_id = @group_id group by group_id ", new { tmdb_movie_id = tmdb_movie_id, group_id = group_id });
+                    return new DataAccessResult()
+                    {
+                        returnObject = avg_rating
+                    };
                 }
                 catch (SqlException ex)
                 {
