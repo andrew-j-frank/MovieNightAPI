@@ -11,5 +11,14 @@ namespace MovieNightAPI.DataAccess
         public DataAccessResult Login(Login login);
 
         public DataAccessResult SignUp(SignUp signUp);
+
+        public DataAccessResult CreateGroup(Group group);
+
+        public DataAccessResult JoinGroup(int group_id, int creator_id, string alias, Boolean is_admin = false);
+
+        public DataAccessResult ChangeAlias(int group_id, int creator_id, string alias);
+
+        public DataAccessResult GetGroups(int user_id);
+
     }
 }

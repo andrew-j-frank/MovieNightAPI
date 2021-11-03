@@ -38,4 +38,6 @@ namespace SpikeExerciseAPI.Controllers
             }
         }
     }
+
+    //TODO(speters): deleteUser(string username, string password)
 }
