@@ -807,17 +807,6 @@ namespace MovieNightAPI.DataAccess
                     {
                         returnObject = users
                     };
-
-                    }
-                    else
-                    {
-                        return new DataAccessResult()
-                        {
-                            error = true,
-                            statusCode = 500,
-                            message = "multiple rows changed. THIS SHOULD NEVER HAPPEN"
-                        };
-                    }
                 }
                 catch (SqlException ex)
                 {
