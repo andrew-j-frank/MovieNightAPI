@@ -627,30 +627,32 @@ namespace MovieNightAPI.DataAccess
             }
         }
 
-        public DataAccessResult AddMovieEvent(int event_id, int tmdb_movie_id)
+        public DataAccessResult AddMovieEvent(int event_id, List<int> movie_ids)
         {
             using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
             {
                 try
                 {
-                    var rows = connection.Execute($"insert into event_movies (event_id,tmdb_movie_id) values (@event_id,@tmdb_movie_id)", new { event_id = event_id, tmdb_movie_id = tmdb_movie_id });
-                    if (rows == 1)
+                    for (int i = 0; i < movie_ids.Count; i++)
                     {
-                        IEnumerable<EventMovies> all_rsvp = connection.Query<EventMovies>($"select * from event_movies where event_id = @event_id", new { event_id = event_id });
-                        return new DataAccessResult()
+                        var rows = connection.Execute($"insert into event_movies (event_id,tmdb_movie_id) values (@event_id,@tmdb_movie_id)", new { event_id = event_id, tmdb_movie_id = movie_ids[i] });
+                        if  (rows != 1)
                         {
-                            returnObject = all_rsvp
-                        };
+                            return new DataAccessResult()
+                            {
+                                error = true,
+                                statusCode = 500,
+                                message = "Movie could not be added to event."
+                            };
+                        }
                     }
-                    else
+
+                    IEnumerable<EventMovies> all_movies = connection.Query<EventMovies>($"select * from event_movies where event_id = @event_id", new { event_id = event_id });
+                    return new DataAccessResult()
                     {
-                        return new DataAccessResult()
-                        {
-                            error = true,
-                            statusCode = 500,
-                            message = "User could not be RSVPd."
-                        };
-                    }
+                        returnObject = all_movies
+                    };
+                    
                 }
                 catch (SqlException ex)
                 {

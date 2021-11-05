@@ -105,9 +105,9 @@ namespace SpikeExerciseAPI.Controllers
         // POST /event/{event_id}/movies
         [ProducesResponseType(typeof(IEnumerable<EventMovies>), StatusCodes.Status200OK)]
         [HttpPost("{event_id}/movies")]
-        public IActionResult AddMovieEvent(int event_id, [FromBody] int tmdb_movie_id)
+        public IActionResult AddMovieEvent(int event_id, [FromBody] List<int> movie_ids)
         {
-            DataAccessResult result = _dataAccess.AddMovieEvent(event_id, tmdb_movie_id);
+            DataAccessResult result = _dataAccess.AddMovieEvent(event_id, movie_ids);
             if (!result.error)
             {
                 return Ok(result.returnObject);
