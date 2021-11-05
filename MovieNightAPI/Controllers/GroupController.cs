@@ -22,6 +22,8 @@ namespace SpikeExerciseAPI.Controllers
             this._dataAccess = dataAccess;
         }
 
+        #region POST
+
         // POST /group
         [ProducesResponseType(typeof(GroupJoin), StatusCodes.Status200OK)]
         [HttpPost]
@@ -63,6 +65,10 @@ namespace SpikeExerciseAPI.Controllers
                 return StatusCode(result.statusCode, new { message = result.message });
             }
         }
+
+        #endregion
+
+        #region GET
 
         // Get /group/{group_id}/users
         [ProducesResponseType(typeof(IEnumerable<GroupUser>), StatusCodes.Status200OK)]
@@ -128,6 +134,10 @@ namespace SpikeExerciseAPI.Controllers
             }
         }
 
+        #endregion
+
+        #region PATCH
+
         // PATCH /group/{group_id}/max_user_movies
         [ProducesResponseType(typeof(GroupJoin), StatusCodes.Status200OK)]
         [HttpPatch("{group_id}/max_user_movies")]
@@ -160,6 +170,10 @@ namespace SpikeExerciseAPI.Controllers
             }
         }
 
+        #endregion
+
+        #region DELETE
+
         // DELETE /Movie
         [ProducesResponseType(typeof(GroupMovies), StatusCodes.Status200OK)]
         [HttpDelete("{group_id}/movie/{tmdb_movie_id}")]
@@ -191,5 +205,7 @@ namespace SpikeExerciseAPI.Controllers
                 return Ok(result.returnObject);
             }
         }
+
+        #endregion
     }
 }
