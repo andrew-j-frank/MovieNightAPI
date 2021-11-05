@@ -171,7 +171,7 @@ namespace MovieNightAPI.DataAccess
 
         #region Group
 
-        public DataAccessResult CreateGroup(Group group)
+        public DataAccessResult CreateGroup(GroupJoin group)
         {
             using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
             {
@@ -197,7 +197,7 @@ namespace MovieNightAPI.DataAccess
             }
         }
 
-        public DataAccessResult JoinGroup(int group_id, int creator_id, string alias, Boolean is_admin = false)
+        public DataAccessResult JoinGroup(int group_id, int creator_id, string alias, bool is_admin = false)
         {
             using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
             {
@@ -206,7 +206,7 @@ namespace MovieNightAPI.DataAccess
                     var rows = connection.Execute($"insert into group_users (group_id,user_id,alias,is_admin) values (@group_id,@creator_id,@alias,@is_admin)", new { group_id = group_id, creator_id = creator_id, alias = alias, is_admin = is_admin });
                     if (rows == 1)
                     {
-                        var group = connection.QuerySingle<Group>($"select * from group where group_id = @group_id", new { group_id = group_id });
+                        var group = connection.QuerySingle<GroupJoin>($"select * from groups where group_id = @group_id", new { group_id = group_id });
                         group.alias = alias;
                         return new DataAccessResult()
                         {
@@ -245,11 +245,10 @@ namespace MovieNightAPI.DataAccess
                     var rows = connection.Execute($"update group_users set alias = @alias where group_id = @group_id and user_id = @user_id;", new { alias = alias, group_id = group_id, user_id = user_id });
                     if (rows == 1)
                     {
-                        var group = connection.QuerySingle<Group>($"select * from group where group_id = @group_id", new { group_id = group_id });
-                        group.alias = alias;
+                        var groupUser = connection.QuerySingle<GroupUserDB>($"select * from group_users where group_id = @group_id and user_id = @user_id", new { group_id = group_id, user_id = user_id });
                         return new DataAccessResult()
                         {
-                            returnObject = group
+                            returnObject = GroupUser.GroupUserDBToGroupUser(groupUser)
                         };
                     }
                     else
@@ -712,5 +711,199 @@ namespace MovieNightAPI.DataAccess
         }
 
         #endregion
+
+        public DataAccessResult GetUsers(int group_id)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    IEnumerable<GroupUserDB> groups = connection.Query<GroupUserDB>($"select * from group_users where group_id = @group_id", new { group_id = group_id });
+                    List<GroupUser> users = new List<GroupUser>();
+                    foreach (GroupUserDB group in groups)
+                    {
+                        if(group.alias == null)
+                        {
+                            group.alias = connection.QuerySingle<string>($"select username from users where user_id = @user_id", new { user_id = group.user_id });
+                        }
+                        users.Add(GroupUser.GroupUserDBToGroupUser(group));
+                    }
+                    return new DataAccessResult()
+                    {
+                        returnObject = users
+                    };
+
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
+
+        public DataAccessResult DeleteGroup(int group_id)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    Group group = connection.QuerySingle<Group>($"select * from groups where group_id = @group_id", new { group_id = group_id });
+                    connection.Execute($"delete from group_users where group_id = @group_id", new { group_id = group_id });
+                    connection.Execute($"delete from events where group_id = @group_id", new { group_id = group_id });
+                    connection.Execute($"delete from group_movies where group_id = @group_id", new { group_id = group_id });
+                    connection.Execute($"delete from group_movie_ratings where group_id = @group_id", new { group_id = group_id });
+                    connection.Execute($"delete from groups where group_id = @group_id", new { group_id = group_id });
+                    return new DataAccessResult()
+                    {
+                        returnObject = group
+                    };
+
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
+        public DataAccessResult DeleteUserGroup(int user_id, int group_id)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    UserDB user = connection.QuerySingle<UserDB>($"select * from users where user_id = @user_id", new { user_id = user_id });
+                    connection.Execute($"delete from group_users where user_id = @user_id and group_id = @group_id", new { user_id = user_id, group_id = group_id });
+                    return new DataAccessResult()
+                    {
+                        returnObject = User.UserDBToUser(user)
+                    };
+
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
+
+        public DataAccessResult ChangeAdmin(int group_id, int user_id, bool is_admin)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    var rows = connection.Execute($"update group_users set is_admin = @is_admin where group_id = @group_id and user_id = @user_id;", new { is_admin = is_admin, group_id = group_id, user_id = user_id });
+                    if (rows == 1)
+                    {
+                        var groupUser = connection.QuerySingle<GroupUserDB>($"select * from group_users where group_id = @group_id and user_id = @user_id", new { group_id = group_id, user_id = user_id });
+                        return new DataAccessResult()
+                        {
+                            returnObject = GroupUser.GroupUserDBToGroupUser(groupUser)
+                        };
+                    }
+                    else
+                    {
+                        return new DataAccessResult()
+                        {
+                            error = true,
+                            statusCode = 500,
+                            message = "is_admin could not be updated. A SqlException should have been thrown. THIS SHOULD NEVER HAPPEN"
+                        };
+                    }
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
+
+        public DataAccessResult GetGroup(int group_id)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    Group group = connection.QuerySingle<Group>($"select * from groups where group_id = @group_id", new { group_id = group_id });
+                    return new DataAccessResult()
+                    {
+                        returnObject = group
+                    };
+
+                }
+                catch (Exception ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
+
+        public DataAccessResult ChangeMaxMovies(int group_id, int max_user_movies)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    var rows = connection.Execute($"update groups set max_user_movies = @max_user_movies where group_id = @group_id;", new { max_user_movies = max_user_movies, group_id = group_id });
+                    if (rows == 1)
+                    {
+                        var group = connection.QuerySingle<Group>($"select * from groups where group_id = @group_id", new { group_id = group_id });
+                        return new DataAccessResult()
+                        {
+                            returnObject = group
+                        };
+                    }
+                    else
+                    {
+                        return new DataAccessResult()
+                        {
+                            error = true,
+                            statusCode = 500,
+                            message = "is_admin could not be updated. A SqlException should have been thrown. THIS SHOULD NEVER HAPPEN"
+                        };
+                    }
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
     }
 }

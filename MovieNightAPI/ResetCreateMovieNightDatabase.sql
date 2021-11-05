@@ -27,6 +27,7 @@ CREATE TABLE groups (
 	group_id INT PRIMARY KEY IDENTITY (1, 1),
 	group_name VARCHAR(50) NOT NULL,
 	created_by INT NOT NULL,
+	max_user_movies INT NULL,
 	FOREIGN KEY (created_by) REFERENCES users (user_id)
 );
 
@@ -34,7 +35,7 @@ CREATE TABLE groups (
 CREATE TABLE group_users (
 	group_id INT,
 	user_id INT,
-	alias VARCHAR(25) NOT NULL,
+	alias VARCHAR(25) NULL,
 	is_admin BIT NOT NULL,
 	FOREIGN KEY (group_id) REFERENCES groups (group_id),
 	FOREIGN KEY (user_id) REFERENCES users (user_id),
