@@ -89,12 +89,12 @@ namespace SpikeExerciseAPI.Controllers
         // PATCH /event/{event_id}/rsvp/{user_id}
         [ProducesResponseType(typeof(IEnumerable<RSVP>), StatusCodes.Status200OK)]
         [HttpPatch("{event_id}/rsvp/{user_id}")]
-        public IActionResult ChangeRSVP(int event_id, int user_id, [FromBody] IsComing is_coming)
+        public IActionResult ChangeRSVP(int event_id, int user_id, [FromBody] Boolean is_coming)
         {
             DataAccessResult result = _dataAccess.ChangeRSVP(event_id, user_id, is_coming);
             if (!result.error)
             {
-                return Ok(result.returnObject);
+                return Ok(200);
             }
             else
             {
@@ -105,7 +105,7 @@ namespace SpikeExerciseAPI.Controllers
         // POST /event/{event_id}/movies
         [ProducesResponseType(typeof(IEnumerable<EventMovies>), StatusCodes.Status200OK)]
         [HttpPost("{event_id}/movies")]
-        public IActionResult AddMovieEvent(int event_id, [FromBody] MovieIDList movie_ids)
+        public IActionResult AddMovieEvent(int event_id, [FromBody] List<int> movie_ids)
         {
             DataAccessResult result = _dataAccess.AddMovieEvent(event_id, movie_ids);
             if (!result.error)

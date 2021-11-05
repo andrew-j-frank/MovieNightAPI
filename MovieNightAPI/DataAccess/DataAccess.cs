@@ -309,36 +309,6 @@ namespace MovieNightAPI.DataAccess
             {
                 try
                 {
-                    // Get number of movies added by user
-                    int num_movies = connection.QuerySingle<int>($"select count(*) from group_movies where group_id = @group_id and added_by = @added_by", new { group_id = group_movies.group_id, added_by = group_movies.added_by });
-                    // Get max number of movies per user in this group
-                    int max_movies = connection.QuerySingle<int>($"select max_user_movies from groups where group_id = @group_id", new { group_id = group_movies.group_id });
-
-                    // Check if user has added their maximum number of movies
-                    if (num_movies == max_movies)
-                    {
-                        // The user has exceeded their limit for movies, this movie will not be added to the group
-                        return new DataAccessResult()
-                        {
-                            error = true,
-                            statusCode = 500,
-                            message = "The user has already submitted their maximum number of movies for this group."
-                        };
-                    }
-
-                    // Check if this movie has already been added to the group
-                    int exists = connection.QuerySingle<int>($"select count(*) from group_movies where group_id = @group_id and tmdb_movie_id = @tmdb_movie_id", new { group_id = group_movies.group_id, tmdb_movie_id = group_movies.tmdb_movie_id });
-                    if (exists > 0)
-                    {
-                        // This movie has already been added to the group
-                        return new DataAccessResult()
-                        {
-                            error = true,
-                            statusCode = 500,
-                            message = "The given movie has already been added to the group."
-                        };
-                    }
-
                     var rows = connection.Execute($"insert into group_movies (group_id,tmdb_movie_id,added_by) values (@group_id,@tmdb_movie_id,@added_by)", new { group_id = group_movies.group_id, tmdb_movie_id = group_movies.tmdb_movie_id, added_by = group_movies.added_by });
                     if (rows == 1)
                     {
@@ -412,6 +382,7 @@ namespace MovieNightAPI.DataAccess
             {
                 try
                 {
+                    // Should we check if there are no movies?
                     IEnumerable<GroupMovies> movies = connection.Query<GroupMovies>($"select * from group_movies where group_id = @group_id", new { group_id = group_id });
                     return new DataAccessResult()
                     {
@@ -508,7 +479,7 @@ namespace MovieNightAPI.DataAccess
             {
                 try
                 {
-                    var event_id = connection.QuerySingle<int>($"insert into events (group_id, start_time, location, genre, tmdb_movie_id, organized_by, voting_mode) OUTPUT INSERTED.event_id values (@group_id, @start_time, @location, @genre, @tmdb_movie_id, @organized_by, @voting_mode)", new { group_id = group_event.group_id, start_time = group_event.start_time, location = group_event.location, genre = group_event.genre, tmdb_movie_id = group_event.tmdb_movie_id, organized_by = group_event.organized_by, voting_mode = group_event.voting_mode });
+                    var event_id = connection.QuerySingle<int>($"insert into events (start_time, location, genre, tmdb_movie_id, organized_by, voting_mode) OUTPUT INSERTED.event_id values (@start_time, @location, @genre, @tmdb_movie_id, @organized_by, @voting_mode)", new { start_time = group_event.start_time, location = group_event.location, genre = group_event.genre, tmdb_movie_id = group_event.tmdb_movie_id, organized_by = group_event.organized_by, voting_mode = group_event.voting_mode });
                     group_event.event_id = event_id;
                     return new DataAccessResult()
                     {
@@ -617,13 +588,13 @@ namespace MovieNightAPI.DataAccess
             }
         }
 
-        public DataAccessResult ChangeRSVP(int event_id, int user_id, IsComing is_coming)
+        public DataAccessResult ChangeRSVP(int event_id, int user_id, Boolean is_coming)
         {
             using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
             {
                 try
                 {
-                    var rows = connection.Execute($"update rsvp set is_coming = @is_coming where user_id = @user_id and event_id = @event_id", new { is_coming = is_coming.is_coming, user_id = user_id, event_id = event_id });
+                    var rows = connection.Execute($"update rsvp set is_coming = @is_coming where user_id = @user_id and event_id = @event_id", new { is_coming = is_coming, user_id = user_id, event_id = event_id });
                     if (rows == 1)
                     {
                         IEnumerable<RSVP> all_rsvp = connection.Query<RSVP>($"select * from rsvp where event_id = @event_id", new { event_id = event_id });
@@ -655,15 +626,15 @@ namespace MovieNightAPI.DataAccess
             }
         }
 
-        public DataAccessResult AddMovieEvent(int event_id, MovieIDList movie_ids)
+        public DataAccessResult AddMovieEvent(int event_id, List<int> movie_ids)
         {
             using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
             {
                 try
                 {
-                    for (int i = 0; i < movie_ids.movie_ids.Count; i++)
+                    for (int i = 0; i < movie_ids.Count; i++)
                     {
-                        var rows = connection.Execute($"insert into event_movies (event_id,tmdb_movie_id) values (@event_id,@tmdb_movie_id)", new { event_id = event_id, tmdb_movie_id = movie_ids.movie_ids[i] });
+                        var rows = connection.Execute($"insert into event_movies (event_id,tmdb_movie_id) values (@event_id,@tmdb_movie_id)", new { event_id = event_id, tmdb_movie_id = movie_ids[i] });
                         if  (rows != 1)
                         {
                             return new DataAccessResult()
