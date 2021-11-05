@@ -38,7 +38,7 @@ namespace MovieNightAPI.DataAccess
 
         public DataAccessResult ChangeRSVP(int event_id, int user_id, Boolean is_coming);
 
-        public DataAccessResult AddMovieEvent(int event_id, int tmdb_movie_id);
+        public DataAccessResult AddMovieEvent(int event_id, List<int> movie_ids);
 
         public DataAccessResult GetMoviesEvent(int event_id);
 
