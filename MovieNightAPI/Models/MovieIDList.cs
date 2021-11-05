@@ -5,9 +5,8 @@ using System.Threading.Tasks;
 
 namespace MovieNightAPI.Models
 {
-    public class EventMovies
+    public class MovieIDList
     {
-        public int event_id { get; set; }
-        public int tmdb_movie_id { get; set; }
+        public List<int> movie_ids { get; set; }
     }
 }
