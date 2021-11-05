@@ -161,14 +161,14 @@ namespace SpikeExerciseAPI.Controllers
         }
 
         // DELETE /Movie
-        //[ProducesResponseType(typeof(GroupMovies), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(GroupMovies), StatusCodes.Status200OK)]
         [HttpDelete("{group_id}/movie/{tmdb_movie_id}")]
         public IActionResult DeleteMovie(int group_id, int tmdb_movie_id)
         {
             var result = _dataAccess.RemoveMovie(group_id, tmdb_movie_id);
             if (!result.error)
             {
-                return Ok(200);
+                return Ok(result.returnObject);
             }
             else
             {

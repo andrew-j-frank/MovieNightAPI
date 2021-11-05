@@ -388,10 +388,14 @@ namespace MovieNightAPI.DataAccess
             {
                 try
                 {
+                    GroupMovies movie = connection.QuerySingle<GroupMovies>($"select * from group_movies where group_id = @group_id and tmdb_movie_id = @tmdb_movie_id", new { group_id = group_id, tmdb_movie_id = tmdb_movie_id });
                     var rows = connection.Execute($"delete from group_movies where group_id = @group_id and tmdb_movie_id = @tmdb_movie_id", new { group_id = group_id, tmdb_movie_id = tmdb_movie_id });
                     if (rows == 1)
                     {
-                        return null;
+                        return new DataAccessResult()
+                        {
+                            returnObject = movie
+                        };
                     }
                     else
                     {
