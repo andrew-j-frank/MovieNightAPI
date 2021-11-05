@@ -56,7 +56,7 @@ namespace SpikeExerciseAPI.Controllers
 
         // GET /Event user
         [ProducesResponseType(typeof(IEnumerable<GroupEvent>), StatusCodes.Status200OK)]
-        [HttpGet]
+        [HttpGet("placeholder")]
         public IActionResult GetUser([FromBody] int user_id)
         {
             var result = _dataAccess.GetUserEvents(user_id);
@@ -72,7 +72,7 @@ namespace SpikeExerciseAPI.Controllers
 
         // GET /Event userGroup
         [ProducesResponseType(typeof(IEnumerable<GroupEvent>), StatusCodes.Status200OK)]
-        [HttpGet]
+        [HttpGet("placeholder2")]
         public IActionResult GetUserGroupEvents([FromBody] int user_id, int group_id)
         {
             var result = _dataAccess.GetUserGroupEvents(user_id, group_id);
@@ -88,7 +88,7 @@ namespace SpikeExerciseAPI.Controllers
 
         // POST /Event join
         //[ProducesResponseType(typeof(GroupEvent), StatusCodes.Status200OK)]
-        [HttpPost]
+        [HttpPost("placeholder")]
         public IActionResult Join([FromBody] int user_id, int event_id)
         {
             var result = _dataAccess.JoinEvent(user_id, event_id);
@@ -120,7 +120,7 @@ namespace SpikeExerciseAPI.Controllers
 
         // GET /Event rsvp
         [ProducesResponseType(typeof(IEnumerable<string>), StatusCodes.Status200OK)]
-        [HttpGet]
+        [HttpGet("placeholder3")]
         public IActionResult GetRSVP([FromBody] int event_id)
         {
             var result = _dataAccess.GetRSVP(event_id);
@@ -136,7 +136,7 @@ namespace SpikeExerciseAPI.Controllers
 
         // GET /Event movies
         [ProducesResponseType(typeof(IEnumerable<int>), StatusCodes.Status200OK)]
-        [HttpGet]
+        [HttpGet("placeholder4")]
         public IActionResult GetMovies([FromBody] int event_id)
         {
             var result = _dataAccess.GetMoviesEvent(event_id);
