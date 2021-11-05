@@ -12,7 +12,7 @@ namespace MovieNightAPI.DataAccess
 
         public DataAccessResult SignUp(SignUp signUp);
 
-        public DataAccessResult CreateGroup(Group group);
+        public DataAccessResult CreateGroup(GroupJoin group);
 
         public DataAccessResult JoinGroup(int group_id, int creator_id, string alias, Boolean is_admin = false);
 
@@ -46,5 +46,16 @@ namespace MovieNightAPI.DataAccess
 
         public DataAccessResult GetMoviesEvent(int event_id);
 
+        public DataAccessResult GetUsers(int group_id);
+
+        public DataAccessResult DeleteGroup(int group_id);
+
+        public DataAccessResult DeleteUserGroup(int user_id, int group_id);
+
+        public DataAccessResult ChangeAdmin(int group_id, int user_id, bool is_admin);
+
+        public DataAccessResult GetGroup(int group_id);
+
+        public DataAccessResult ChangeMaxMovies(int group_id, int max_user_movies);
     }
 }

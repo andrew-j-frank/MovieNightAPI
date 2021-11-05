@@ -23,14 +23,10 @@ namespace SpikeExerciseAPI.Controllers
         }
 
         // POST /group
-        [ProducesResponseType(typeof(Group), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(GroupJoin), StatusCodes.Status200OK)]
         [HttpPost]
-        public IActionResult Post([FromBody] string group_name, int creator_id, string alias)
+        public IActionResult CreateGroup([FromBody] GroupJoin group)
         {
-            Group group = new Group();
-            group.group_name = group_name;
-            group.created_by = creator_id;
-
             var result = _dataAccess.CreateGroup(group);
             if (result.error)
             {
@@ -38,7 +34,8 @@ namespace SpikeExerciseAPI.Controllers
             }
             else
             {
-                var result2 = _dataAccess.JoinGroup(group.group_id, creator_id, alias, true);
+                if (group.alias == "") group.alias = null;
+                var result2 = _dataAccess.JoinGroup(group.group_id, group.created_by, group.alias, true);
                 if (result2.error)
                 {
                     return StatusCode(result2.statusCode, new { message = result2.message });
@@ -47,60 +44,72 @@ namespace SpikeExerciseAPI.Controllers
                 {
                     return Ok(result2.returnObject);
                 }
-                
+
             }
         }
 
-        // POST /group join
+        // Get /group/users
+        [ProducesResponseType(typeof(IEnumerable<GroupUser>), StatusCodes.Status200OK)]
+        [HttpGet("{group_id}/users")]
+        public IActionResult GetUsers(int group_id)
+        {
+            var result = _dataAccess.GetUsers(group_id);
+            if (result.error)
+            {
+                return StatusCode(result.statusCode, new { message = result.message });
+            }
+            else
+            {
+                return Ok(result.returnObject);
+            }
+        }
+
+        // Get /group/users
+        [ProducesResponseType(typeof(IEnumerable<GroupUser>), StatusCodes.Status200OK)]
+        [HttpGet("{group_id}")]
+        public IActionResult GetGroup(int group_id)
+        {
+            var result = _dataAccess.GetGroup(group_id);
+            if (result.error)
+            {
+                return StatusCode(result.statusCode, new { message = result.message });
+            }
+            else
+            {
+                return Ok(result.returnObject);
+            }
+        }
+
+        // PATCH /group max_user_movies
+        [ProducesResponseType(typeof(GroupJoin), StatusCodes.Status200OK)]
+        [HttpPatch("{group_id}")]
+        public IActionResult ChangeAlias(int group_id, [FromBody] MaxUserMovies max_user_movies)
+        {
+            var result = _dataAccess.ChangeMaxMovies(group_id, max_user_movies.max_user_movies);
+            if (!result.error)
+            {
+                return Ok(result.returnObject);
+            }
+            else
+            {
+                return StatusCode(result.statusCode, new { message = result.message });
+            }
+        }
+
+        // Delete 
         [ProducesResponseType(typeof(Group), StatusCodes.Status200OK)]
-        [HttpPost]
-        public IActionResult Post([FromBody] int group_id, int user_id, string alias)
+        [HttpDelete("{group_id}")]
+        public IActionResult DeleteGroup(int group_id)
         {
-            var result = _dataAccess.JoinGroup(group_id, user_id, alias);
-            if (!result.error)
-            {
-                return Ok(result.returnObject);
-            }
-            else
+            var result = _dataAccess.DeleteGroup(group_id);
+            if (result.error)
             {
                 return StatusCode(result.statusCode, new { message = result.message });
             }
-        }
-
-        // PATCH /group alias
-        [ProducesResponseType(typeof(Group), StatusCodes.Status200OK)]
-        [HttpPatch]
-        public IActionResult Patch([FromBody] int group_id, int user_id, string alias)
-        {
-            var result = _dataAccess.ChangeAlias(group_id, user_id, alias);
-            if (!result.error)
+            else
             {
                 return Ok(result.returnObject);
             }
-            else
-            {
-                return StatusCode(result.statusCode, new { message = result.message });
-            }
         }
-
-        // How do we retrieve aliases for all of these?
-        // Iterate and get aliases for individual groups?
-        // GET /group
-        [ProducesResponseType(typeof(IEnumerable<Group>), StatusCodes.Status200OK)]
-        [HttpGet]
-        public IActionResult Get([FromBody] int user_id)
-        {
-            var result = _dataAccess.GetGroups(user_id);
-            if (!result.error)
-            {
-                return Ok(result.returnObject);
-            }
-            else
-            {
-                return StatusCode(result.statusCode, new { message = result.message });
-            }
-        }
-
-        //TODO(speters): leaveGroup(int group_id, int user_id)
     }
 }
