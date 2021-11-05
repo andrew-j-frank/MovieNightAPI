@@ -118,6 +118,22 @@ namespace SpikeExerciseAPI.Controllers
             }
         }
 
+        // POST /event/{event_id}/movies
+        [ProducesResponseType(typeof(IEnumerable<EventMovies>), StatusCodes.Status200OK)]
+        [HttpPost("{event_id}/movies")]
+        public IActionResult AddMovieEvent(int event_id, [FromBody] List<int> movie_ids)
+        {
+            DataAccessResult result = _dataAccess.AddMovieEvent(event_id, movie_ids);
+            if (!result.error)
+            {
+                return Ok(result.returnObject);
+            }
+            else
+            {
+                return StatusCode(result.statusCode, new { message = result.message });
+            }
+        }
+
         // GET /event/{event_id}/movies
         [ProducesResponseType(typeof(IEnumerable<int>), StatusCodes.Status200OK)]
         [HttpGet("{event_id}/movies")]
