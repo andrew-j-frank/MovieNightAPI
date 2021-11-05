@@ -726,6 +726,19 @@ namespace MovieNightAPI.DataAccess
             {
                 try
                 {
+                    // Check if the movie and event_id combination is in event_movie
+                    int exists = connection.QuerySingle<int>($"select count(*) from event_movies where event_id = @event_id and tmdb_movie_id = @tmdb_movie_id", new { event_id = event_movie_ratings.event_id, tmdb_movie_id = event_movie_ratings.tmdb_movie_id });
+                    if (exists == 0)
+                    {
+                        // This movie has not been added to this event!
+                        return new DataAccessResult()
+                        {
+                            error = true,
+                            statusCode = 500,
+                            message = "The movie that was rated has not been added to this event."
+                        };
+                    }
+
                     var rows = connection.Execute($"insert into event_movie_ratings (event_id,user_id,tmdb_movie_id,rating) values (@event_id,@user_id,@tmdb_movie_id,@rating)", new { event_id = event_movie_ratings.event_id, user_id = event_movie_ratings.user_id, tmdb_movie_id = event_movie_ratings.tmdb_movie_id, rating = event_movie_ratings.rating });
                     if (rows == 1)
                     {
