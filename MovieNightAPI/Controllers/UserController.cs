@@ -20,7 +20,9 @@ namespace MovieNightAPI.Controllers
             this._dataAccess = dataAccess;
         }
 
-        // POST /group join
+        #region POST
+
+        // POST /user/{user_id}/join
         [ProducesResponseType(typeof(GroupJoin), StatusCodes.Status200OK)]
         [HttpPost("{user_id}/join")]
         public IActionResult JoinGroup(int user_id, [FromBody] GroupJoin groupUser)
@@ -36,7 +38,7 @@ namespace MovieNightAPI.Controllers
             }
         }
 
-        // POST /group rating
+        // POST /user/rating
         [ProducesResponseType(typeof(MovieRatings), StatusCodes.Status200OK)]
         [HttpPost("rating")]
         public IActionResult UserRating([FromBody] MovieRatings rating)
@@ -52,53 +54,9 @@ namespace MovieNightAPI.Controllers
             }
         }
 
-        // POST /group join
-        [ProducesResponseType(typeof(MovieRatings), StatusCodes.Status200OK)]
-        [HttpPatch("{user_id}/{group_id}/rating")]
-        public IActionResult PatchUserRating(int user_id, int group_id, [FromBody] MovieRatings rating)
-        {
-            var result = _dataAccess.UpdateRateMovie(user_id, group_id, rating);
-            if (!result.error)
-            {
-                return Ok(result.returnObject);
-            }
-            else
-            {
-                return StatusCode(result.statusCode, new { message = result.message });
-            }
-        }
+        #endregion
 
-        // PATCH /group alias
-        [ProducesResponseType(typeof(GroupJoin), StatusCodes.Status200OK)]
-        [HttpPatch("{user_id}/{group_id}/alias")]
-        public IActionResult ChangeAlias(int user_id, int group_id, [FromBody] Alias alias)
-        {
-            var result = _dataAccess.ChangeAlias(group_id, user_id, alias.alias);
-            if (!result.error)
-            {
-                return Ok(result.returnObject);
-            }
-            else
-            {
-                return StatusCode(result.statusCode, new { message = result.message });
-            }
-        }
-
-        // PATCH /group alias
-        [ProducesResponseType(typeof(GroupJoin), StatusCodes.Status200OK)]
-        [HttpPatch("{user_id}/{group_id}/admin")]
-        public IActionResult ChangeAdmin(int user_id, int group_id, [FromBody] IsAdmin admin)
-        {
-            var result = _dataAccess.ChangeAdmin(group_id, user_id, admin.is_admin);
-            if (!result.error)
-            {
-                return Ok(result.returnObject);
-            }
-            else
-            {
-                return StatusCode(result.statusCode, new { message = result.message });
-            }
-        }
+        #region GET
 
         // GET /group
         [ProducesResponseType(typeof(IEnumerable<Group>), StatusCodes.Status200OK)]
@@ -116,7 +74,63 @@ namespace MovieNightAPI.Controllers
             }
         }
 
-        // Delete 
+        #endregion
+
+        #region PATCH
+
+        // PATCH /user/{user_id}/{group_id}/alias
+        [ProducesResponseType(typeof(GroupJoin), StatusCodes.Status200OK)]
+        [HttpPatch("{user_id}/{group_id}/alias")]
+        public IActionResult ChangeAlias(int user_id, int group_id, [FromBody] Alias alias)
+        {
+            var result = _dataAccess.ChangeAlias(group_id, user_id, alias.alias);
+            if (!result.error)
+            {
+                return Ok(result.returnObject);
+            }
+            else
+            {
+                return StatusCode(result.statusCode, new { message = result.message });
+            }
+        }
+
+        // PATCH /user/{user_id}/{group_id}/admin
+        [ProducesResponseType(typeof(GroupJoin), StatusCodes.Status200OK)]
+        [HttpPatch("{user_id}/{group_id}/admin")]
+        public IActionResult ChangeAdmin(int user_id, int group_id, [FromBody] IsAdmin admin)
+        {
+            var result = _dataAccess.ChangeAdmin(group_id, user_id, admin.is_admin);
+            if (!result.error)
+            {
+                return Ok(result.returnObject);
+            }
+            else
+            {
+                return StatusCode(result.statusCode, new { message = result.message });
+            }
+        }
+
+        // PATCH /user/{user_id}/{group_id}/rating
+        [ProducesResponseType(typeof(MovieRatings), StatusCodes.Status200OK)]
+        [HttpPatch("{user_id}/{group_id}/rating")]
+        public IActionResult PatchUserRating(int user_id, int group_id, [FromBody] MovieRatings rating)
+        {
+            var result = _dataAccess.UpdateRateMovie(user_id, group_id, rating);
+            if (!result.error)
+            {
+                return Ok(result.returnObject);
+            }
+            else
+            {
+                return StatusCode(result.statusCode, new { message = result.message });
+            }
+        }
+
+        #endregion
+
+        #region DELETE
+
+        // Delete user/{user_id}/{group_id}
         [ProducesResponseType(typeof(User), StatusCodes.Status200OK)]
         [HttpDelete("{user_id}/{group_id}")]
         public IActionResult DeleteGroup(int user_id, int group_id)
@@ -131,5 +145,7 @@ namespace MovieNightAPI.Controllers
                 return Ok(result.returnObject);
             }
         }
+
+        #endregion
     }
 }
