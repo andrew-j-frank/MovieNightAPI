@@ -48,7 +48,23 @@ namespace SpikeExerciseAPI.Controllers
             }
         }
 
-        // Get /group/users
+        // POST /group/{group_id}/movie
+        [ProducesResponseType(typeof(GroupMovies), StatusCodes.Status200OK)]
+        [HttpPost("{group_id}/movie")]
+        public IActionResult AddMovie(int group_id, [FromBody] GroupMovies movie)
+        {
+            var result = _dataAccess.AddGroupMovie(movie);
+            if (!result.error)
+            {
+                return Ok(result.returnObject);
+            }
+            else
+            {
+                return StatusCode(result.statusCode, new { message = result.message });
+            }
+        }
+
+        // Get /group/{group_id}/users
         [ProducesResponseType(typeof(IEnumerable<GroupUser>), StatusCodes.Status200OK)]
         [HttpGet("{group_id}/users")]
         public IActionResult GetUsers(int group_id)
@@ -64,7 +80,7 @@ namespace SpikeExerciseAPI.Controllers
             }
         }
 
-        // Get /group/users
+        // Get /group/{group_id}
         [ProducesResponseType(typeof(IEnumerable<GroupUser>), StatusCodes.Status200OK)]
         [HttpGet("{group_id}")]
         public IActionResult GetGroup(int group_id)
@@ -80,7 +96,39 @@ namespace SpikeExerciseAPI.Controllers
             }
         }
 
-        // PATCH /group max_user_movies
+        // Get /group/{group_id}/movies/{user_id}
+        [ProducesResponseType(typeof(IEnumerable<GroupMovieRating>), StatusCodes.Status200OK)]
+        [HttpGet("{group_id}/movies/{user_id}")]
+        public IActionResult GetMovies(int group_id, int user_id)
+        {
+            var result = _dataAccess.GetMovies(group_id, user_id);
+            if (!result.error)
+            {
+                return Ok(result.returnObject);
+            }
+            else
+            {
+                return StatusCode(result.statusCode, new { message = result.message });
+            }
+        }
+
+        // Get /group/{group_id}/events
+        [ProducesResponseType(typeof(IEnumerable<GroupEvent>), StatusCodes.Status200OK)]
+        [HttpGet("{group_id}/events")]
+        public IActionResult GetGroupEvents(int group_id)
+        {
+            var result = _dataAccess.GetEvents(group_id);
+            if (!result.error)
+            {
+                return Ok(result.returnObject);
+            }
+            else
+            {
+                return StatusCode(result.statusCode, new { message = result.message });
+            }
+        }
+
+        // PATCH /group/{group_id} max_user_movies
         [ProducesResponseType(typeof(GroupJoin), StatusCodes.Status200OK)]
         [HttpPatch("{group_id}")]
         public IActionResult ChangeAlias(int group_id, [FromBody] MaxUserMovies max_user_movies)
@@ -96,7 +144,23 @@ namespace SpikeExerciseAPI.Controllers
             }
         }
 
-        // Delete 
+        // DELETE /Movie
+        //[ProducesResponseType(typeof(GroupMovies), StatusCodes.Status200OK)]
+        [HttpDelete("{group_id}/movie/{tmdb_movie_id}")]
+        public IActionResult DeleteMovie(int group_id, int tmdb_movie_id)
+        {
+            var result = _dataAccess.RemoveMovie(group_id, tmdb_movie_id);
+            if (!result.error)
+            {
+                return Ok(200);
+            }
+            else
+            {
+                return StatusCode(result.statusCode, new { message = result.message });
+            }
+        }
+
+        // Delete /group
         [ProducesResponseType(typeof(Group), StatusCodes.Status200OK)]
         [HttpDelete("{group_id}")]
         public IActionResult DeleteGroup(int group_id)

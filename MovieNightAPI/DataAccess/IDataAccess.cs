@@ -24,7 +24,7 @@ namespace MovieNightAPI.DataAccess
 
         public DataAccessResult RemoveMovie(int group_id, int tmdb_movie_id);
 
-        public DataAccessResult GetMovies(int group_id);
+        public DataAccessResult GetMovies(int group_id, int user_id);
 
         public DataAccessResult RateMovie(MovieRatings movie_ratings);
 
@@ -59,5 +59,9 @@ namespace MovieNightAPI.DataAccess
         public DataAccessResult GetGroup(int group_id);
 
         public DataAccessResult ChangeMaxMovies(int group_id, int max_user_movies);
+
+        public DataAccessResult GetEvents(int group_id);
+
+        public DataAccessResult UpdateRateMovie(int user_id, int group_id, MovieRatings ratings);
     }
 }

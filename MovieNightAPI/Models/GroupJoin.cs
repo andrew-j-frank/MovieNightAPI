@@ -11,5 +11,7 @@ namespace MovieNightAPI.Models
         public string group_name { get; set; }
         public int created_by { get; set; }
         public string alias { get; set; }
+        public bool is_admin { get; set; }
+        public int group_code { get; set; }
     }
 }

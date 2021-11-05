@@ -203,6 +203,16 @@ namespace MovieNightAPI.DataAccess
             {
                 try
                 {
+                    int exists = connection.QuerySingle<int>($"select count(*) from groups where group_id = @group_id", new { group_id = group_id });
+                    if (exists <= 0)
+                    {
+                        return new DataAccessResult()
+                        {
+                            error = true,
+                            statusCode = 404,
+                            message = "Group does not exist"
+                        };
+                    }
                     var rows = connection.Execute($"insert into group_users (group_id,user_id,alias,is_admin) values (@group_id,@creator_id,@alias,@is_admin)", new { group_id = group_id, creator_id = creator_id, alias = alias, is_admin = is_admin });
                     if (rows == 1)
                     {
@@ -406,13 +416,18 @@ namespace MovieNightAPI.DataAccess
             }
         }
 
-        public DataAccessResult GetMovies(int group_id)
+        public DataAccessResult GetMovies(int group_id, int user_id)
         {
             using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
             {
                 try
                 {
-                    IEnumerable<GroupMovies> movies = connection.Query<GroupMovies>($"select * from group_movies where group_id = @group_id", new { group_id = group_id });
+                    IEnumerable<GroupMovieRating> movies = connection.Query<GroupMovieRating>($"select gm.group_id, gm.tmdb_movie_id, avg(rating) as avg_user_rating from group_movies gm inner join group_movie_ratings gmr on gm.group_id = gmr.group_id and gm.tmdb_movie_id = gmr.tmdb_movie_id where gm.group_id = @group_id group by gm.group_id, gm.tmdb_movie_id", new { group_id = group_id });
+                    foreach (var movie in movies)
+                    {
+                        int rating = connection.QuerySingle<int>($"select rating from group_movie_ratings where group_id = @group_id and user_id = @user_id and tmdb_movie_id = @tmdb_movie_id", new { group_id = group_id, user_id = user_id, tmdb_movie_id = movie.tmdb_movie_id });
+                        movie.user_rating = rating;
+                    }
                     return new DataAccessResult()
                     {
                         returnObject = movies
@@ -977,6 +992,70 @@ namespace MovieNightAPI.DataAccess
                             error = true,
                             statusCode = 500,
                             message = "is_admin could not be updated. A SqlException should have been thrown. THIS SHOULD NEVER HAPPEN"
+                        };
+                    }
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
+
+        public DataAccessResult GetEvents(int group_id)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    IEnumerable<GroupEvent> events = connection.Query<GroupEvent>($"select * from events where group_id = @group_id", new { group_id = group_id });
+                    return new DataAccessResult()
+                    {
+                        returnObject = events
+                    };
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
+
+        public DataAccessResult UpdateRateMovie(int user_id, int group_id, MovieRatings ratings)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    var rows = connection.Execute($"update group_movie_ratings set rating = @rating where group_id = @group_id and user_id = @user_id and tmdb_movie_id = @tmdb_movie_id;", new { rating = ratings.rating, group_id = group_id, user_id = user_id, tmdb_movie_id = ratings.tmdb_movie_id });
+                    if (rows == 1)
+                    {
+                        ratings.user_id = user_id;
+                        ratings.group_id = group_id;
+                        return new DataAccessResult()
+                        {
+                            returnObject = ratings
+                        };
+                    }
+                    else
+                    {
+                        return new DataAccessResult()
+                        {
+                            error = true,
+                            statusCode = 500,
+                            message = "rating could not be updated. A SqlException should have been thrown. THIS SHOULD NEVER HAPPEN"
                         };
                     }
                 }

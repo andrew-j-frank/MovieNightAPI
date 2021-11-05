@@ -22,10 +22,42 @@ namespace MovieNightAPI.Controllers
 
         // POST /group join
         [ProducesResponseType(typeof(GroupJoin), StatusCodes.Status200OK)]
-        [HttpPost("{user_id}/join/{group_id}")]
-        public IActionResult JoinGroup(int user_id, int group_id, [FromBody] GroupUserDB groupUser)
+        [HttpPost("{user_id}/join")]
+        public IActionResult JoinGroup(int user_id, [FromBody] GroupJoin groupUser)
         {
-            var result = _dataAccess.JoinGroup(group_id, user_id, groupUser.alias, groupUser.is_admin);
+            var result = _dataAccess.JoinGroup(groupUser.group_code, user_id, groupUser.alias, groupUser.is_admin);
+            if (!result.error)
+            {
+                return Ok(result.returnObject);
+            }
+            else
+            {
+                return StatusCode(result.statusCode, new { message = result.message });
+            }
+        }
+
+        // POST /group rating
+        [ProducesResponseType(typeof(MovieRatings), StatusCodes.Status200OK)]
+        [HttpPost("rating")]
+        public IActionResult UserRating([FromBody] MovieRatings rating)
+        {
+            var result = _dataAccess.RateMovie(rating);
+            if (!result.error)
+            {
+                return Ok(result.returnObject);
+            }
+            else
+            {
+                return StatusCode(result.statusCode, new { message = result.message });
+            }
+        }
+
+        // POST /group join
+        [ProducesResponseType(typeof(MovieRatings), StatusCodes.Status200OK)]
+        [HttpPatch("{user_id}/{group_id}/rating")]
+        public IActionResult PatchUserRating(int user_id, int group_id, [FromBody] MovieRatings rating)
+        {
+            var result = _dataAccess.UpdateRateMovie(user_id, group_id, rating);
             if (!result.error)
             {
                 return Ok(result.returnObject);
