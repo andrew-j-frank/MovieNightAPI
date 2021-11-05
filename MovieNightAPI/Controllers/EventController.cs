@@ -22,12 +22,12 @@ namespace SpikeExerciseAPI.Controllers
             this._dataAccess = dataAccess;
         }
 
-        // POST /Event
+        // POST /event
         [ProducesResponseType(typeof(GroupEvent), StatusCodes.Status200OK)]
         [HttpPost]
         public IActionResult Post([FromBody] GroupEvent group_event)
         {
-            var result = _dataAccess.CreateEvent(group_event);
+            DataAccessResult result = _dataAccess.CreateEvent(group_event);
             if (!result.error)
             {
                 return Ok(result.returnObject);
@@ -38,12 +38,12 @@ namespace SpikeExerciseAPI.Controllers
             }
         }
 
-        // GET /Event group
+        // GET /event/{event_id}
         [ProducesResponseType(typeof(IEnumerable<GroupEvent>), StatusCodes.Status200OK)]
-        [HttpGet]
-        public IActionResult GetGroup([FromBody] int group_id)
+        [HttpGet("{event_id}")]
+        public IActionResult Get(int event_id)
         {
-            var result = _dataAccess.GetGroupEvents(group_id);
+            DataAccessResult result = _dataAccess.GetEvent(event_id);
             if (!result.error)
             {
                 return Ok(result.returnObject);
@@ -54,12 +54,12 @@ namespace SpikeExerciseAPI.Controllers
             }
         }
 
-        // GET /Event user
-        [ProducesResponseType(typeof(IEnumerable<GroupEvent>), StatusCodes.Status200OK)]
-        [HttpGet("placeholder")]
-        public IActionResult GetUser([FromBody] int user_id)
+        // POST /event/rsvp
+        [ProducesResponseType(typeof(IEnumerable<RSVP>), StatusCodes.Status200OK)]
+        [HttpPost("rsvp")]
+        public IActionResult Join([FromBody] RSVP rsvp)
         {
-            var result = _dataAccess.GetUserEvents(user_id);
+            DataAccessResult result = _dataAccess.JoinEvent(rsvp);
             if (!result.error)
             {
                 return Ok(result.returnObject);
@@ -70,12 +70,12 @@ namespace SpikeExerciseAPI.Controllers
             }
         }
 
-        // GET /Event userGroup
-        [ProducesResponseType(typeof(IEnumerable<GroupEvent>), StatusCodes.Status200OK)]
-        [HttpGet("placeholder2")]
-        public IActionResult GetUserGroupEvents([FromBody] int user_id, int group_id)
+        // GET /event/{event_id}/rsvp
+        [ProducesResponseType(typeof(IEnumerable<RSVP>), StatusCodes.Status200OK)]
+        [HttpGet("{event_id}/rsvp")]
+        public IActionResult GetGroup(int event_id)
         {
-            var result = _dataAccess.GetUserGroupEvents(user_id, group_id);
+            DataAccessResult result = _dataAccess.GetRSVPs(event_id);
             if (!result.error)
             {
                 return Ok(result.returnObject);
@@ -86,44 +86,12 @@ namespace SpikeExerciseAPI.Controllers
             }
         }
 
-        // POST /Event join
-        //[ProducesResponseType(typeof(GroupEvent), StatusCodes.Status200OK)]
-        [HttpPost("placeholder")]
-        public IActionResult Join([FromBody] int user_id, int event_id)
+        // PATCH /event/{event_id}/rsvp/{user_id}
+        [ProducesResponseType(typeof(IEnumerable<RSVP>), StatusCodes.Status200OK)]
+        [HttpPatch("{event_id}/rsvp/{user_id}")]
+        public IActionResult ChangeRSVP(int event_id, int user_id, [FromBody] IsComing is_coming)
         {
-            var result = _dataAccess.JoinEvent(user_id, event_id);
-            if (!result.error)
-            {
-                return Ok(200);
-            }
-            else
-            {
-                return StatusCode(result.statusCode, new { message = result.message });
-            }
-        }
-
-        // PATCH /Event leave
-        //[ProducesResponseType(typeof(GroupEvent), StatusCodes.Status200OK)]
-        [HttpPatch]
-        public IActionResult Leave([FromBody] int user_id, int event_id)
-        {
-            var result = _dataAccess.LeaveEvent(user_id, event_id);
-            if (!result.error)
-            {
-                return Ok(200);
-            }
-            else
-            {
-                return StatusCode(result.statusCode, new { message = result.message });
-            }
-        }
-
-        // GET /Event rsvp
-        [ProducesResponseType(typeof(IEnumerable<string>), StatusCodes.Status200OK)]
-        [HttpGet("placeholder3")]
-        public IActionResult GetRSVP([FromBody] int event_id)
-        {
-            var result = _dataAccess.GetRSVP(event_id);
+            DataAccessResult result = _dataAccess.ChangeRSVP(event_id, user_id, is_coming);
             if (!result.error)
             {
                 return Ok(result.returnObject);
@@ -134,12 +102,60 @@ namespace SpikeExerciseAPI.Controllers
             }
         }
 
-        // GET /Event movies
+        // POST /event/{event_id}/movies
+        [ProducesResponseType(typeof(IEnumerable<EventMovies>), StatusCodes.Status200OK)]
+        [HttpPost("{event_id}/movies")]
+        public IActionResult AddMovieEvent(int event_id, [FromBody] MovieIDList movie_ids)
+        {
+            DataAccessResult result = _dataAccess.AddMovieEvent(event_id, movie_ids);
+            if (!result.error)
+            {
+                return Ok(result.returnObject);
+            }
+            else
+            {
+                return StatusCode(result.statusCode, new { message = result.message });
+            }
+        }
+
+        // GET /event/{event_id}/movies
         [ProducesResponseType(typeof(IEnumerable<int>), StatusCodes.Status200OK)]
-        [HttpGet("placeholder4")]
-        public IActionResult GetMovies([FromBody] int event_id)
+        [HttpGet("{event_id}/movies")]
+        public IActionResult GetMoviesEvent(int event_id)
         {
-            var result = _dataAccess.GetMoviesEvent(event_id);
+            DataAccessResult result = _dataAccess.GetMoviesEvent(event_id);
+            if (!result.error)
+            {
+                return Ok(result.returnObject);
+            }
+            else
+            {
+                return StatusCode(result.statusCode, new { message = result.message });
+            }
+        }
+
+        // POST /event/rating
+        [ProducesResponseType(typeof(IEnumerable<GroupMovies>), StatusCodes.Status200OK)]
+        [HttpPost("rating")]
+        public IActionResult RateMovieEvent([FromBody] EventMovieRatings event_movie_ratings)
+        {
+            DataAccessResult result = _dataAccess.RateMovieEvent(event_movie_ratings);
+            if (!result.error)
+            {
+                return Ok(result.returnObject);
+            }
+            else
+            {
+                return StatusCode(result.statusCode, new { message = result.message });
+            }
+        }
+
+        // Get /event/rating
+        [ProducesResponseType(typeof(IEnumerable<EventMovieRatings>), StatusCodes.Status200OK)]
+        [HttpGet("{event_id}/rating")]
+        public IActionResult GetEventRating(int event_id)
+        {
+            DataAccessResult result = _dataAccess.GetEventRating(event_id);
             if (!result.error)
             {
                 return Ok(result.returnObject);
