@@ -85,6 +85,7 @@ CREATE TABLE event_movie_ratings (
 	rating INT NOT NULL,
 	FOREIGN KEY (event_id) REFERENCES events (event_id),
 	FOREIGN KEY (user_id) REFERENCES users (user_id),
+	FOREIGN KEY (tmdb_movie_id) REFERENCES event_movies (tmdb_movie_id),
 	PRIMARY KEY(event_id, user_id, tmdb_movie_id)
 );
 
