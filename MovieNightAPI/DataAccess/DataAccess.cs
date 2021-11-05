@@ -1008,6 +1008,43 @@ namespace MovieNightAPI.DataAccess
             }
         }
 
+        public DataAccessResult ChangeGroupName(int group_id, string group_name)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    var rows = connection.Execute($"update groups set group_name = @group_name where group_id = @group_id;", new { group_name = group_name, group_id = group_id });
+                    if (rows == 1)
+                    {
+                        var group = connection.QuerySingle<Group>($"select * from groups where group_id = @group_id", new { group_id = group_id });
+                        return new DataAccessResult()
+                        {
+                            returnObject = group
+                        };
+                    }
+                    else
+                    {
+                        return new DataAccessResult()
+                        {
+                            error = true,
+                            statusCode = 500,
+                            message = "is_admin could not be updated. A SqlException should have been thrown. THIS SHOULD NEVER HAPPEN"
+                        };
+                    }
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
         public DataAccessResult GetEvents(int group_id)
         {
             using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))

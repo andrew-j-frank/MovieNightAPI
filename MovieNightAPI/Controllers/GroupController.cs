@@ -128,12 +128,28 @@ namespace SpikeExerciseAPI.Controllers
             }
         }
 
-        // PATCH /group/{group_id} max_user_movies
+        // PATCH /group/{group_id}/max_user_movies
         [ProducesResponseType(typeof(GroupJoin), StatusCodes.Status200OK)]
-        [HttpPatch("{group_id}")]
-        public IActionResult ChangeAlias(int group_id, [FromBody] MaxUserMovies max_user_movies)
+        [HttpPatch("{group_id}/max_user_movies")]
+        public IActionResult ChangeMaxMovies(int group_id, [FromBody] MaxUserMovies max_user_movies)
         {
             var result = _dataAccess.ChangeMaxMovies(group_id, max_user_movies.max_user_movies);
+            if (!result.error)
+            {
+                return Ok(result.returnObject);
+            }
+            else
+            {
+                return StatusCode(result.statusCode, new { message = result.message });
+            }
+        }
+
+        // PATCH /group/{group_id}/group_name
+        [ProducesResponseType(typeof(GroupJoin), StatusCodes.Status200OK)]
+        [HttpPatch("{group_id}/group_name")]
+        public IActionResult ChangeGroupName(int group_id, [FromBody] GroupName groupName)
+        {
+            var result = _dataAccess.ChangeGroupName(group_id, groupName.group_name);
             if (!result.error)
             {
                 return Ok(result.returnObject);
