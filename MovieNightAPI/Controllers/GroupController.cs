@@ -53,9 +53,14 @@ namespace SpikeExerciseAPI.Controllers
         // POST /group/{group_id}/movie
         [ProducesResponseType(typeof(GroupMovies), StatusCodes.Status200OK)]
         [HttpPost("{group_id}/movie")]
-        public IActionResult AddMovie(int group_id, [FromBody] GroupMovies movie)
+        public IActionResult AddMovie(int group_id, [FromBody] GroupMoviesNoId movie)
         {
-            var result = _dataAccess.AddGroupMovie(movie);
+            GroupMovies groupMovie = new GroupMovies();
+            groupMovie.added_by = movie.added_by;
+            groupMovie.tmdb_movie_id = movie.tmdb_movie_id;
+            groupMovie.group_id = group_id;
+
+            var result = _dataAccess.AddGroupMovie(groupMovie);
             if (!result.error)
             {
                 return Ok(result.returnObject);
@@ -174,7 +179,7 @@ namespace SpikeExerciseAPI.Controllers
 
         #region DELETE
 
-        // DELETE /Movie
+        // DELETE /group/{group_id}/movie/{tmdb_movie_id}
         [ProducesResponseType(typeof(GroupMovies), StatusCodes.Status200OK)]
         [HttpDelete("{group_id}/movie/{tmdb_movie_id}")]
         public IActionResult DeleteMovie(int group_id, int tmdb_movie_id)

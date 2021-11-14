@@ -178,7 +178,7 @@ namespace MovieNightAPI.DataAccess
             {
                 try
                 {
-                    var group_id = connection.QuerySingle<int>($"insert into groups (group_name,created_by) OUTPUT INSERTED.group_id values (@group_name,@created_by)", new { group_name = group.group_name, created_by = group.created_by });
+                    var group_id = connection.QuerySingle<int>($"insert into groups (group_name,created_by,max_user_movies) OUTPUT INSERTED.group_id values (@group_name,@created_by,-1)", new { group_name = group.group_name, created_by = group.created_by });
                     group.group_id = group_id;
                     return new DataAccessResult()
                     {
@@ -211,7 +211,7 @@ namespace MovieNightAPI.DataAccess
                     int max_movies = connection.QuerySingle<int>($"select max_user_movies from groups where group_id = @group_id", new { group_id = group_movies.group_id });
 
                     // Check if user has added their maximum number of movies
-                    if (num_movies == max_movies)
+                    if (max_movies != -1 && num_movies >= max_movies)
                     {
                         // The user has exceeded their limit for movies, this movie will not be added to the group
                         return new DataAccessResult()
@@ -302,6 +302,16 @@ namespace MovieNightAPI.DataAccess
                         statusCode = 500,
                         // TODO: Change message for final version 
                         message = ex.Message
+                    };
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message + ". Ensure that the given movie was in the group's queue."
                     };
                 }
             }
