@@ -37,7 +37,7 @@ namespace SpikeExerciseAPI.Controllers
             else
             {
                 if (group.alias == "") group.alias = null;
-                var result2 = _dataAccess.JoinGroup(group.group_id, group.created_by, group.alias, true);
+                var result2 = _dataAccess.JoinGroupCreator(group);
                 if (result2.error)
                 {
                     return StatusCode(result2.statusCode, new { message = result2.message });

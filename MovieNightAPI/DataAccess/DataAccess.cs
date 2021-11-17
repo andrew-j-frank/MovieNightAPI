@@ -178,8 +178,30 @@ namespace MovieNightAPI.DataAccess
             {
                 try
                 {
-                    var group_id = connection.QuerySingle<int>($"insert into groups (group_name,created_by,max_user_movies) OUTPUT INSERTED.group_id values (@group_name,@created_by,-1)", new { group_name = group.group_name, created_by = group.created_by });
+                    string group_code = "";
+                    int num_groups = connection.QuerySingle<int>($"select count(*) from groups");
+                    if (num_groups == 0)
+                    {
+                        // Since this is the first group, simply generate a group code
+                        group_code = GenerateGroupCode();
+                    }
+                    else
+                    {
+                        // Get list of all group codes
+                        IEnumerable<string> group_codes = connection.Query<string>($"select group_code from groups");
+
+                        // Generate group code until group code is unique
+                        group_code = GenerateGroupCode();
+                        while (group_codes.Contains(group_code))
+                        {
+                            group_code = GenerateGroupCode();
+                        }
+                    }
+
+                    // Create group and get the generated group_id
+                    var group_id = connection.QuerySingle<int>($"insert into groups (group_code,group_name,created_by,max_user_movies) OUTPUT INSERTED.group_id values (@group_code,@group_name,@created_by,5)", new { group_code = group_code, group_name = group.group_name, created_by = group.created_by });
                     group.group_id = group_id;
+                    group.group_code = group_code;
                     return new DataAccessResult()
                     {
                         returnObject = group
@@ -198,6 +220,16 @@ namespace MovieNightAPI.DataAccess
             }
         }
 
+        private static string GenerateGroupCode(int length = 6)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+            var random = new Random();
+            var randomString = new string(Enumerable.Repeat(chars, length)
+                                                    .Select(s => s[random.Next(s.Length)]).ToArray());
+            return randomString;
+        }
+
         // group
         public DataAccessResult AddGroupMovie(GroupMovies group_movies)
         {
@@ -211,7 +243,7 @@ namespace MovieNightAPI.DataAccess
                     int max_movies = connection.QuerySingle<int>($"select max_user_movies from groups where group_id = @group_id", new { group_id = group_movies.group_id });
 
                     // Check if user has added their maximum number of movies
-                    if (max_movies != -1 && num_movies >= max_movies)
+                    if (num_movies >= max_movies)
                     {
                         // The user has exceeded their limit for movies, this movie will not be added to the group
                         return new DataAccessResult()
@@ -238,6 +270,25 @@ namespace MovieNightAPI.DataAccess
                     var rows = connection.Execute($"insert into group_movies (group_id,tmdb_movie_id,added_by) values (@group_id,@tmdb_movie_id,@added_by)", new { group_id = group_movies.group_id, tmdb_movie_id = group_movies.tmdb_movie_id, added_by = group_movies.added_by });
                     if (rows == 1)
                     {
+                        // Now, add a rating of 5 for the movie for each individual in the group
+                        // Get a list of all users in the group
+                        IEnumerable<int> users = connection.Query<int>($"select user_id from group_users where group_id = @group_id", new { group_id = group_movies.group_id });
+
+                        // For each user in the group, add a rating of 5
+                        foreach (int user_id in users)
+                        {
+                            rows = connection.Execute($"insert into group_movie_ratings (group_id,user_id,tmdb_movie_id,rating) values (@group_id,@user_id,@tmdb_movie_id,5)", new { group_id = group_movies.group_id, user_id = user_id, tmdb_movie_id = group_movies.tmdb_movie_id });
+                            if (rows != 1)
+                            {
+                                return new DataAccessResult()
+                                {
+                                    error = true,
+                                    statusCode = 500,
+                                    message = "multiple rows changed. THIS SHOULD NEVER HAPPEN"
+                                };
+                            }
+                        }
+                        
                         return new DataAccessResult()
                         {
                             returnObject = group_movies
@@ -324,7 +375,7 @@ namespace MovieNightAPI.DataAccess
             {
                 try
                 {
-                    IEnumerable<GroupMovieRating> movies = connection.Query<GroupMovieRating>($"select gm.group_id, gm.tmdb_movie_id, avg(cast(rating as float)) as avg_user_rating from group_movies gm inner join group_movie_ratings gmr on gm.group_id = gmr.group_id and gm.tmdb_movie_id = gmr.tmdb_movie_id where gm.group_id = @group_id group by gm.group_id, gm.tmdb_movie_id", new { group_id = group_id });
+                    IEnumerable<GroupMovieRating> movies = connection.Query<GroupMovieRating>($"select gm.added_by, gm.group_id, gm.tmdb_movie_id, avg(rating) as avg_user_rating from group_movies gm inner join group_movie_ratings gmr on gm.group_id = gmr.group_id and gm.tmdb_movie_id = gmr.tmdb_movie_id where gm.group_id = @group_id group by gm.group_id, gm.tmdb_movie_id, gm.added_by", new { group_id = group_id });
                     foreach (var movie in movies)
                     {
                         int rating = connection.QuerySingle<int>($"select rating from group_movie_ratings where group_id = @group_id and user_id = @user_id and tmdb_movie_id = @tmdb_movie_id", new { group_id = group_id, user_id = user_id, tmdb_movie_id = movie.tmdb_movie_id });
@@ -448,6 +499,16 @@ namespace MovieNightAPI.DataAccess
         {
             using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
             {
+                if (max_user_movies < 0)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        message = "Max movies cannot be a negative value."
+                    };
+                }
+
                 try
                 {
                     var rows = connection.Execute($"update groups set max_user_movies = @max_user_movies where group_id = @group_id;", new { max_user_movies = max_user_movies, group_id = group_id });
@@ -615,7 +676,7 @@ namespace MovieNightAPI.DataAccess
                 }
             }
         }
-
+        /*
         // user
         public DataAccessResult RateMovie(MovieRatings movie_ratings)
         {
@@ -623,7 +684,7 @@ namespace MovieNightAPI.DataAccess
             {
                 try
                 {
-                    var rows = connection.Execute($"insert into group_movie_ratings (group_id,user_id,tmdb_movie_id,rating) values (@group_id,@user_id,@tmdb_movie_id,@rating)", new { group_id = movie_ratings.group_id, user_id = movie_ratings.user_id, tmdb_movie_id = movie_ratings.tmdb_movie_id, rating = movie_ratings.rating });
+                    var rows = connection.Execute($"insert into group_movie_ratings (group_id,user_id,tmdb_movie_id,rating) values (@group_id,@user_id,@tmdb_movie_id,@rating)", new { group_id = movie_ratings.group_id, user_id = movie_ratings.user_id, tmdb_movie_id = movie_ratings.tmdb_movie_id, rating = movie_ratings.user_rating });
                     if (rows == 1)
                     {
                         return new DataAccessResult()
@@ -654,7 +715,7 @@ namespace MovieNightAPI.DataAccess
                 }
             }
         }
-
+        */
         // user
         public DataAccessResult DeleteUserGroup(int user_id, int group_id)
         {
@@ -729,7 +790,7 @@ namespace MovieNightAPI.DataAccess
             {
                 try
                 {
-                    var rows = connection.Execute($"update group_movie_ratings set rating = @rating where group_id = @group_id and user_id = @user_id and tmdb_movie_id = @tmdb_movie_id;", new { rating = ratings.rating, group_id = group_id, user_id = user_id, tmdb_movie_id = ratings.tmdb_movie_id });
+                    var rows = connection.Execute($"update group_movie_ratings set rating = @rating where group_id = @group_id and user_id = @user_id and tmdb_movie_id = @tmdb_movie_id;", new { rating = ratings.user_rating, group_id = group_id, user_id = user_id, tmdb_movie_id = ratings.tmdb_movie_id });
                     if (rows == 1)
                     {
                         ratings.user_id = user_id;
@@ -768,13 +829,13 @@ namespace MovieNightAPI.DataAccess
 
         // user
         // group
-        public DataAccessResult JoinGroup(int group_id, int creator_id, string alias, bool is_admin = false)
+        public DataAccessResult JoinGroupCreator(GroupJoin group)
         {
             using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
             {
                 try
                 {
-                    int exists = connection.QuerySingle<int>($"select count(*) from groups where group_id = @group_id", new { group_id = group_id });
+                    int exists = connection.QuerySingle<int>($"select count(*) from groups where group_code = @group_code", new { group_code = group.group_code });
                     if (exists <= 0)
                     {
                         return new DataAccessResult()
@@ -784,11 +845,10 @@ namespace MovieNightAPI.DataAccess
                             message = "Group does not exist"
                         };
                     }
-                    var rows = connection.Execute($"insert into group_users (group_id,user_id,alias,is_admin) values (@group_id,@creator_id,@alias,@is_admin)", new { group_id = group_id, creator_id = creator_id, alias = alias, is_admin = is_admin });
+                    int group_id = connection.QuerySingle<int>($"select group_id from groups where group_code = @group_code", new { group_code = group.group_code });
+                    var rows = connection.Execute($"insert into group_users (group_id,user_id,alias,is_admin) values (@group_id,@user_id,@alias,@is_admin)", new { group_id = group_id, user_id = group.created_by, alias = group.alias, is_admin = true });
                     if (rows == 1)
                     {
-                        var group = connection.QuerySingle<GroupJoin>($"select * from groups where group_id = @group_id", new { group_id = group_id });
-                        group.alias = alias;
                         return new DataAccessResult()
                         {
                             returnObject = group
@@ -817,10 +877,83 @@ namespace MovieNightAPI.DataAccess
             }
         }
 
+        public DataAccessResult JoinGroupUser(GroupJoinUser groupUser, int user_id)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    int exists = connection.QuerySingle<int>($"select count(*) from groups where group_code = @group_code", new { group_code = groupUser.group_code });
+                    if (exists <= 0)
+                    {
+                        return new DataAccessResult()
+                        {
+                            error = true,
+                            statusCode = 404,
+                            message = "Group does not exist"
+                        };
+                    }
+                    int group_id = connection.QuerySingle<int>($"select group_id from groups where group_code = @group_code", new { group_code = groupUser.group_code });
+                    var rows = connection.Execute($"insert into group_users (group_id,user_id,alias,is_admin) values (@group_id,@user_id,@alias,@is_admin)", new { group_id = group_id, user_id = user_id, alias = groupUser.alias, is_admin = groupUser.is_admin });
+                    if (rows == 1)
+                    {
+                        GroupJoinUserResult result = new GroupJoinUserResult();
+                        result.group_id = group_id;
+                        result.group_code = groupUser.group_code;
+                        result.user_id = user_id;
+                        result.alias = groupUser.alias;
+                        result.is_admin = groupUser.is_admin;
+
+                        // Add ratings from this user for all movies in the queue
+                        // Get a list of all movies in the queue
+                        IEnumerable<int> movies = connection.Query<int>($"select tmdb_movie_id from group_movies where group_id = @group_id", new { group_id = group_id });
+                        foreach (int movie in movies)
+                        {
+                            rows = connection.Execute($"insert into group_movie_ratings (group_id,user_id,tmdb_movie_id,rating) values (@group_id,@user_id,@tmdb_movie_id,5)", new { group_id = group_id, user_id = user_id, tmdb_movie_id = movie });
+                            if (rows != 1)
+                            {
+                                return new DataAccessResult()
+                                {
+                                    error = true,
+                                    statusCode = 500,
+                                    message = "multiple rows changed. THIS SHOULD NEVER HAPPEN"
+                                };
+                            }
+                        }
+
+
+                        return new DataAccessResult()
+                        {
+                            returnObject = result
+                        };
+                    }
+                    else
+                    {
+                        return new DataAccessResult()
+                        {
+                            error = true,
+                            statusCode = 500,
+                            message = "User could not be added to group. A SqlException should have been thrown. THIS SHOULD NEVER HAPPEN"
+                        };
+                    }
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
+        
         #endregion
-
+        
         #region Event
-
+        
         // event
         public DataAccessResult CreateEvent(GroupEvent group_event)
         {

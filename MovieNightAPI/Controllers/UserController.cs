@@ -23,11 +23,11 @@ namespace MovieNightAPI.Controllers
         #region POST
 
         // POST /user/{user_id}/join
-        [ProducesResponseType(typeof(GroupJoin), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(GroupJoinUserResult), StatusCodes.Status200OK)]
         [HttpPost("{user_id}/join")]
-        public IActionResult JoinGroup(int user_id, [FromBody] GroupJoin groupUser)
+        public IActionResult JoinGroup(int user_id, [FromBody] GroupJoinUser groupUser)
         {
-            var result = _dataAccess.JoinGroup(groupUser.group_code, user_id, groupUser.alias, groupUser.is_admin);
+            var result = _dataAccess.JoinGroupUser(groupUser, user_id);
             if (!result.error)
             {
                 return Ok(result.returnObject);
@@ -37,7 +37,7 @@ namespace MovieNightAPI.Controllers
                 return StatusCode(result.statusCode, new { message = result.message });
             }
         }
-
+        /*
         // POST /user/rating
         [ProducesResponseType(typeof(MovieRatings), StatusCodes.Status200OK)]
         [HttpPost("rating")]
@@ -53,12 +53,12 @@ namespace MovieNightAPI.Controllers
                 return StatusCode(result.statusCode, new { message = result.message });
             }
         }
-
+        */
         #endregion
 
         #region GET
 
-        // GET /group
+        // GET /user/{user_id}/groups
         [ProducesResponseType(typeof(IEnumerable<Group>), StatusCodes.Status200OK)]
         [HttpGet("{user_id}/groups")]
         public IActionResult Get(int user_id)
