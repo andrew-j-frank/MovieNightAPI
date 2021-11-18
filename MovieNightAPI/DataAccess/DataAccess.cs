@@ -1,11 +1,14 @@
 ﻿using Dapper;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using MovieNightAPI.Models;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Diagnostics;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -39,9 +42,10 @@ namespace MovieNightAPI.DataAccess
                         var user = users.First();
                         if (user.password == GenerateSaltedHash(login.password, user.salt))
                         {
+                            var token = GenerateToken(user.username);
                             return new DataAccessResult()
                             {
-                                returnObject = User.UserDBToUser(user)
+                                returnObject = LoginSignUpUser.UserDBToUser(user, token)
                             };
                         }
                         else
@@ -92,12 +96,14 @@ namespace MovieNightAPI.DataAccess
                     var rows = connection.Execute($"insert into users (username,password,salt,email) values (@username,@password,@salt,@email)", new { username = signUp.username, password = hashedPassword, salt = salt, email = signUp.email });
                     if (rows == 1)
                     {
-                        var users = connection.Query<User>($"select * from users where username = @username", new { username = signUp.username }).ToList();
+                        var users = connection.Query<UserDB>($"select * from users where username = @username", new { username = signUp.username }).ToList();
                         if (users.Count == 1)
                         {
+                            var user = users.First();
+                            var token = GenerateToken(user.username);
                             return new DataAccessResult()
                             {
-                                returnObject = users.First()
+                                returnObject = LoginSignUpUser.UserDBToUser(user, token)
                             };
                         }
                         else
@@ -165,6 +171,26 @@ namespace MovieNightAPI.DataAccess
                 // Convert to string
                 return Encoding.ASCII.GetString(randomBytes);
             }
+        }
+
+        private string GenerateToken(string username)
+        {
+            // reference: https://stackoverflow.com/a/63446357
+
+            var clims = new[]
+            {
+                new Claim("username", username),
+            };
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["AuthSettings:Key"]));
+            var token = new JwtSecurityToken(
+                issuer: _config["AuthSettings:Issuer"],
+                audience: _config["AuthSettings:Audience"],
+                claims: clims,
+                expires: DateTime.Now.AddDays(30),
+                signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
+                );
+            string tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+            return tokenString;
         }
 
         #endregion
