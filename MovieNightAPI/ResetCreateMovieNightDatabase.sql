@@ -25,9 +25,11 @@ CREATE TABLE users (
 -- Create the groups table
 CREATE TABLE groups (
 	group_id INT PRIMARY KEY IDENTITY (1, 1),
+	group_code VARCHAR(6) NOT NULL,
 	group_name VARCHAR(50) NOT NULL,
 	created_by INT NOT NULL,
 	max_user_movies INT NOT NULL,
+	CONSTRAINT AK_group_code UNIQUE(group_code),
 	FOREIGN KEY (created_by) REFERENCES users (user_id)
 );
 

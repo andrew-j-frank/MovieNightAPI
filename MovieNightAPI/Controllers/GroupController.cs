@@ -37,7 +37,7 @@ namespace SpikeExerciseAPI.Controllers
             else
             {
                 if (group.alias == "") group.alias = null;
-                var result2 = _dataAccess.JoinGroup(group.group_id, group.created_by, group.alias, true);
+                var result2 = _dataAccess.JoinGroupCreator(group);
                 if (result2.error)
                 {
                     return StatusCode(result2.statusCode, new { message = result2.message });
@@ -165,6 +165,22 @@ namespace SpikeExerciseAPI.Controllers
         public IActionResult ChangeGroupName(int group_id, [FromBody] GroupName groupName)
         {
             var result = _dataAccess.ChangeGroupName(group_id, groupName.group_name);
+            if (!result.error)
+            {
+                return Ok(result.returnObject);
+            }
+            else
+            {
+                return StatusCode(result.statusCode, new { message = result.message });
+            }
+        }
+
+        // PATCH /group/{group_id}/code
+        [ProducesResponseType(typeof(Group), StatusCodes.Status200OK)]
+        [HttpPatch("{group_id}/code")]
+        public IActionResult ChangeGroupCode(int group_id)
+        {
+            var result = _dataAccess.GenerateNewCode(group_id);
             if (!result.error)
             {
                 return Ok(result.returnObject);
