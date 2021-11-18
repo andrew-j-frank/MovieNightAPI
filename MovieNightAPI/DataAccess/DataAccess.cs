@@ -8,6 +8,8 @@ using System.Data.SqlClient;
 using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Net;
+using System.Net.Mail;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -1025,10 +1027,77 @@ namespace MovieNightAPI.DataAccess
             }
         }
 
+        // user
+        public DataAccessResult ForgotPassword(string username)
+        {
+            const string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+            var random = new Random();
+            var newPassword = new string(Enumerable.Repeat(chars, 8).Select(s => s[random.Next(s.Length)]).ToArray());
+
+            var salt = GenerateSalt();
+            var hashedPassword = GenerateSaltedHash(newPassword, salt);
+
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    string email = connection.QuerySingle<string>($"update users set password = @password, salt = @salt output inserted.email where username = @username;", new { password = hashedPassword, salt = salt, username = username, });
+                    var smtpClient = new SmtpClient("smtp.gmail.com")
+                    {
+                        Port = 587,
+                        Credentials = new NetworkCredential(_config["MailSettings:email"], _config["MailSettings:password"]),
+                        EnableSsl = true,
+                    };
+
+                    var emailBody = @$"Hello {username},
+
+You recently requested a password reset.
+
+Your new password: {newPassword}
+
+After logging in, please change your password in the app.
+
+Thanks,
+Movie Night Team";
+
+                    try
+                    {
+                        smtpClient.Send(_config["MailSettings:email"], email, "Movie Night Password Reset", emailBody);
+                    }
+                    catch (Exception ex)
+                    {
+                        return new DataAccessResult()
+                        {
+                            error = true,
+                            statusCode = 500,
+                            // TODO: Change message for final version 
+                            message = ex.Message
+                        };
+                    }
+
+                    return new DataAccessResult()
+                    {
+                        returnObject = new { message = "A reset password email has been sent to the user" }
+                    };
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
+
         #endregion
-        
+
         #region Event
-        
+
         // event
         public DataAccessResult CreateEvent(GroupEvent group_event)
         {
