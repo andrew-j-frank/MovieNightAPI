@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MovieNightAPI.DataAccess;
 using MovieNightAPI.Models;
@@ -9,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace MovieNightAPI.Controllers
 {
+    [AllowAnonymous]
     [Route("[controller]")]
     [ApiController]
     public class SignUpController : ControllerBase
