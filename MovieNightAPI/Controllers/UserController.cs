@@ -128,7 +128,7 @@ namespace MovieNightAPI.Controllers
             }
         }
 
-        // PATCH /user/{user_id}/forgot_password
+        // PATCH /user/forgot_password
         [AllowAnonymous]
         [ProducesResponseType(typeof(MovieRatings), StatusCodes.Status200OK)]
         [HttpPatch("forgot_password")]
