@@ -175,6 +175,22 @@ namespace SpikeExerciseAPI.Controllers
             }
         }
 
+        // PATCH /group/{group_id}/code
+        [ProducesResponseType(typeof(Group), StatusCodes.Status200OK)]
+        [HttpPatch("{group_id}/code")]
+        public IActionResult ChangeGroupCode(int group_id)
+        {
+            var result = _dataAccess.GenerateNewCode(group_id);
+            if (!result.error)
+            {
+                return Ok(result.returnObject);
+            }
+            else
+            {
+                return StatusCode(result.statusCode, new { message = result.message });
+            }
+        }
+
         #endregion
 
         #region DELETE

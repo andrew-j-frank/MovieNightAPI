@@ -64,5 +64,7 @@ namespace MovieNightAPI.DataAccess
         public DataAccessResult UpdateRateMovie(int user_id, int group_id, MovieRatings ratings);
 
         public DataAccessResult ChangeGroupName(int group_id, string group_name);
+
+        public DataAccessResult GenerateNewCode(int group_id);
     }
 }
