@@ -529,6 +529,16 @@ namespace MovieNightAPI.DataAccess
                         message = ex.Message
                     };
                 }
+                catch (InvalidOperationException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
             }
         }
 
@@ -918,6 +928,15 @@ namespace MovieNightAPI.DataAccess
             {
                 try
                 {
+                    if (ratings.user_rating > 10 | ratings.user_rating < 0)
+                    {
+                        return new DataAccessResult()
+                        {
+                            error = true,
+                            statusCode = 500,
+                            message = "Rating was out of the valid range of 0 - 10"
+                        };
+                    }
                     var rows = connection.Execute($"update group_movie_ratings set rating = @rating where group_id = @group_id and user_id = @user_id and tmdb_movie_id = @tmdb_movie_id;", new { rating = ratings.user_rating, group_id = group_id, user_id = user_id, tmdb_movie_id = ratings.tmdb_movie_id });
                     if (rows == 1)
                     {
