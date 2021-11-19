@@ -9,6 +9,12 @@
       "type": "mssql.azure",
       "connectionId": "ConnectionStrings:SQLServer",
       "secretStore": "AzureAppSettings"
+    },
+    "identityapp1": {
+      "type": "identityapp",
+      "connectionId": "",
+      "suggestion": "true",
+      "ignored": "true"
     }
   }
 }

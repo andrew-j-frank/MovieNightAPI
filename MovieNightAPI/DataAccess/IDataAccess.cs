@@ -66,5 +66,6 @@ namespace MovieNightAPI.DataAccess
         public DataAccessResult ChangeGroupName(int group_id, string group_name);
 
         public DataAccessResult GenerateNewCode(int group_id);
+        public DataAccessResult ForgotPassword(string username);
     }
 }

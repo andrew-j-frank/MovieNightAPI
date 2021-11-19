@@ -128,6 +128,23 @@ namespace MovieNightAPI.Controllers
             }
         }
 
+        // PATCH /user/forgot_password
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(MovieRatings), StatusCodes.Status200OK)]
+        [HttpPatch("forgot_password")]
+        public IActionResult ForgotPassword([FromBody]Username username)
+        {
+            var result = _dataAccess.ForgotPassword(username.username);
+            if (!result.error)
+            {
+                return Ok(result.returnObject);
+            }
+            else
+            {
+                return StatusCode(result.statusCode, new { message = result.message });
+            }
+        }
+
         #endregion
 
         #region DELETE
