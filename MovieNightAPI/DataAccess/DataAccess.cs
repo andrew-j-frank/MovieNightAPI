@@ -13,6 +13,7 @@ using System.Net.Mail;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace MovieNightAPI.DataAccess
@@ -44,7 +45,7 @@ namespace MovieNightAPI.DataAccess
                         var user = users.First();
                         if (user.password == GenerateSaltedHash(login.password, user.salt))
                         {
-                            var token = GenerateToken(user.username);
+                            var token = GenerateToken(user);
                             return new DataAccessResult()
                             {
                                 returnObject = LoginSignUpUser.UserDBToUser(user, token)
@@ -102,7 +103,7 @@ namespace MovieNightAPI.DataAccess
                         if (users.Count == 1)
                         {
                             var user = users.First();
-                            var token = GenerateToken(user.username);
+                            var token = GenerateToken(user);
                             return new DataAccessResult()
                             {
                                 returnObject = LoginSignUpUser.UserDBToUser(user, token)
@@ -175,19 +176,19 @@ namespace MovieNightAPI.DataAccess
             }
         }
 
-        private string GenerateToken(string username)
+        private string GenerateToken(UserDB user)
         {
             // reference: https://stackoverflow.com/a/63446357
 
-            var clims = new[]
+            var claims = new[]
             {
-                new Claim("username", username),
+                new Claim("user_id", user.user_id.ToString()),
             };
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["AuthSettings:Key"]));
             var token = new JwtSecurityToken(
                 issuer: _config["AuthSettings:Issuer"],
                 audience: _config["AuthSettings:Audience"],
-                claims: clims,
+                claims: claims,
                 expires: DateTime.Now.AddDays(30),
                 signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
                 );
@@ -1421,6 +1422,78 @@ Movie Night Team";
                     };
                 }
             }
+        }
+
+        #endregion
+
+        #region Authorization Checks
+
+        public bool CheckClaims(ClaimsIdentity identity, int user_id, int group_id, bool adminOnly, bool adminAllowed)
+        {
+            if (identity != null)
+            {
+                IEnumerable<Claim> claims = identity.Claims;
+                var user_id_claim = identity.FindFirst("user_id").Value;
+
+                IEnumerable<GroupClaim> groups;
+                using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+                {
+                    groups = connection.Query<GroupClaim>($"select gu.group_id, gu.is_admin from group_users gu inner join groups g on gu.group_id = g.group_id where gu.user_id = @user_id", new { user_id = user_id });
+                }
+
+                var group_claims = groups.Select(o => o.group_id).ToList();
+                var admin_group_claims = groups.Where(o => o.is_admin).Select(o => o.group_id).ToList();
+
+                // Only user_id given
+                if (group_id == -1)
+                {
+                    if (user_id.ToString() == user_id_claim)
+                    {
+                        return true;
+                    }
+                    return false;
+                }
+                // Only group_id given
+                else if(user_id == -1)
+                {
+                    if (adminOnly)
+                    {
+                        if (admin_group_claims.Contains(group_id))
+                        {
+                            return true;
+                        }
+                    }
+                    else if (group_claims.Contains(group_id))
+                    {
+                        return true;
+                    }
+                    return false;
+                }
+                // Both user_id and group_id given
+                else
+                {
+                    if (adminOnly)
+                    {
+                        if (admin_group_claims.Contains(group_id))
+                        {
+                            return true;
+                        }
+                    }
+                    else if (adminAllowed)
+                    {
+                        if (admin_group_claims.Contains(group_id) || (group_claims.Contains(group_id) && user_id.ToString() == user_id_claim))
+                        {
+                            return true;
+                        }
+                    }
+                    else if (group_claims.Contains(group_id) && user_id.ToString() == user_id_claim)
+                    {
+                        return true;
+                    }
+                    return false;
+                }
+            }
+            return false;
         }
 
         #endregion

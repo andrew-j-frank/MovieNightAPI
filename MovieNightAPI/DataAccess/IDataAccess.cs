@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace MovieNightAPI.DataAccess
@@ -67,5 +68,7 @@ namespace MovieNightAPI.DataAccess
 
         public DataAccessResult GenerateNewCode(int group_id);
         public DataAccessResult ForgotPassword(string username);
+
+        public bool CheckClaims(ClaimsIdentity identity, int user_id, int group_id, bool adminOnly, bool adminAllowed);
     }
 }

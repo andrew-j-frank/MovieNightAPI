@@ -6,6 +6,7 @@ using MovieNightAPI.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace MovieNightAPI.Controllers
@@ -65,6 +66,9 @@ namespace MovieNightAPI.Controllers
         [HttpGet("{user_id}/groups")]
         public IActionResult Get(int user_id)
         {
+            // Check if user has access
+            if (!_dataAccess.CheckClaims(HttpContext.User.Identity as ClaimsIdentity, user_id, -1, false, false)) { return new UnauthorizedResult(); }
+
             var result = _dataAccess.GetGroups(user_id);
             if (!result.error)
             {
