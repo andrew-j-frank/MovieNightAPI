@@ -345,15 +345,20 @@ namespace MovieNightAPI.DataAccess
                         // For each user in the group, add a rating of 5
                         foreach (int user_id in users)
                         {
-                            rows = connection.Execute($"insert into group_movie_ratings (group_id,user_id,tmdb_movie_id,rating) values (@group_id,@user_id,@tmdb_movie_id,5)", new { group_id = group_movies.group_id, user_id = user_id, tmdb_movie_id = group_movies.tmdb_movie_id });
-                            if (rows != 1)
+                            // Check if the rating exists for this user
+                            int exists2 = connection.QuerySingle<int>($"select count(*) from group_movie_ratings where user_id = @user_id and group_id = @group_id and tmdb_movie_id = @tmdb_movie_id", new { user_id = user_id, group_id = group_movies.group_id, tmdb_movie_id = group_movies.tmdb_movie_id });
+                            if (exists2 <= 0)
                             {
-                                return new DataAccessResult()
+                                rows = connection.Execute($"insert into group_movie_ratings (group_id,user_id,tmdb_movie_id,rating) values (@group_id,@user_id,@tmdb_movie_id,5)", new { group_id = group_movies.group_id, user_id = user_id, tmdb_movie_id = group_movies.tmdb_movie_id });
+                                if (rows != 1)
                                 {
-                                    error = true,
-                                    statusCode = 500,
-                                    message = "multiple rows changed. THIS SHOULD NEVER HAPPEN"
-                                };
+                                    return new DataAccessResult()
+                                    {
+                                        error = true,
+                                        statusCode = 500,
+                                        message = "multiple rows changed. THIS SHOULD NEVER HAPPEN"
+                                    };
+                                }
                             }
                         }
                         
@@ -866,6 +871,7 @@ namespace MovieNightAPI.DataAccess
                 {
                     UserDB user = connection.QuerySingle<UserDB>($"select * from users where user_id = @user_id", new { user_id = user_id });
                     connection.Execute($"delete from group_users where user_id = @user_id and group_id = @group_id", new { user_id = user_id, group_id = group_id });
+                    connection.Execute($"delete from group_movie_ratings where user_id = @user_id and group_id = @group_id", new { user_id = user_id, group_id = group_id });
                     return new DataAccessResult()
                     {
                         returnObject = User.UserDBToUser(user)
