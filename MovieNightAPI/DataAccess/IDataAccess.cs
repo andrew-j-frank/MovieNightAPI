@@ -40,13 +40,19 @@ namespace MovieNightAPI.DataAccess
 
         public DataAccessResult AddMovieEvent(int event_id, MovieIDList movie_ids);
 
-        public DataAccessResult GetMoviesEvent(int event_id);
+        public DataAccessResult GetMoviesEventUser(int event_id, int user_id);
 
         public DataAccessResult GetEvent(int event_id);
 
         public DataAccessResult RateMovieEvent(EventMovieRatings event_movie_ratings);
 
+        public DataAccessResult UpdateEventMovieRating(EventMovieRatings event_movie_ratings);
+
         public DataAccessResult GetEventRating(int event_id);
+
+        public DataAccessResult ChangeEventVotingMode(int event_id, VotingMode voting_mode);
+
+        public DataAccessResult RemoveEvent(int event_id);
 
         public DataAccessResult GetUsers(int group_id);
 

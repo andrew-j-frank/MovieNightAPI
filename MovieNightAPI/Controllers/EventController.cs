@@ -74,22 +74,6 @@ namespace SpikeExerciseAPI.Controllers
             }
         }
 
-        // POST /event/rating
-        [ProducesResponseType(typeof(IEnumerable<GroupMovies>), StatusCodes.Status200OK)]
-        [HttpPost("rating")]
-        public IActionResult RateMovieEvent([FromBody] EventMovieRatings event_movie_ratings)
-        {
-            DataAccessResult result = _dataAccess.RateMovieEvent(event_movie_ratings);
-            if (!result.error)
-            {
-                return Ok(result.returnObject);
-            }
-            else
-            {
-                return StatusCode(result.statusCode, new { message = result.message });
-            }
-        }
-
         #endregion
 
         #region GET
@@ -126,12 +110,12 @@ namespace SpikeExerciseAPI.Controllers
             }
         }
 
-        // GET /event/{event_id}/movies
-        [ProducesResponseType(typeof(IEnumerable<int>), StatusCodes.Status200OK)]
-        [HttpGet("{event_id}/movies")]
-        public IActionResult GetMoviesEvent(int event_id)
+        // GET /event/{event_id}/movies/{user_id}
+        [ProducesResponseType(typeof(IEnumerable<EventMovieRatings>), StatusCodes.Status200OK)]
+        [HttpGet("{event_id}/movies/{user_id}")]
+        public IActionResult GetMoviesEvent(int event_id, int user_id)
         {
-            DataAccessResult result = _dataAccess.GetMoviesEvent(event_id);
+            DataAccessResult result = _dataAccess.GetMoviesEventUser(event_id, user_id);
             if (!result.error)
             {
                 return Ok(result.returnObject);
@@ -142,7 +126,7 @@ namespace SpikeExerciseAPI.Controllers
             }
         }
 
-        // Get /event/rating
+        // Get /event/{event_id}/rating
         [ProducesResponseType(typeof(IEnumerable<EventMovieRatings>), StatusCodes.Status200OK)]
         [HttpGet("{event_id}/rating")]
         public IActionResult GetEventRating(int event_id)
@@ -168,6 +152,58 @@ namespace SpikeExerciseAPI.Controllers
         public IActionResult ChangeRSVP(int event_id, int user_id, [FromBody] IsComing is_coming)
         {
             DataAccessResult result = _dataAccess.ChangeRSVP(event_id, user_id, is_coming);
+            if (!result.error)
+            {
+                return Ok(result.returnObject);
+            }
+            else
+            {
+                return StatusCode(result.statusCode, new { message = result.message });
+            }
+        }
+
+        // PATCH /event/rating
+        [ProducesResponseType(typeof(IEnumerable<GroupMovies>), StatusCodes.Status200OK)]
+        [HttpPatch("rating")]
+        public IActionResult RateMovieEvent([FromBody] EventMovieRatings event_movie_ratings)
+        {
+            DataAccessResult result = _dataAccess.UpdateEventMovieRating(event_movie_ratings);
+            if (!result.error)
+            {
+                return Ok(result.returnObject);
+            }
+            else
+            {
+                return StatusCode(result.statusCode, new { message = result.message });
+            }
+        }
+
+        // PATCH /event/{event_id}
+        [ProducesResponseType(typeof(GroupEvent), StatusCodes.Status200OK)]
+        [HttpPatch("{event_id}")]
+        public IActionResult ChangeVotingMode(int event_id, [FromBody] VotingMode voting_mode)
+        {
+            DataAccessResult result = _dataAccess.ChangeEventVotingMode(event_id, voting_mode);
+            if (!result.error)
+            {
+                return Ok(result.returnObject);
+            }
+            else
+            {
+                return StatusCode(result.statusCode, new { message = result.message });
+            }
+        }
+
+        #endregion
+
+        #region DELETE
+
+        // Delete /event/{event_id}
+        [ProducesResponseType(typeof(GroupEvent), StatusCodes.Status200OK)]
+        [HttpDelete("{event_id}")]
+        public IActionResult ChangeVotingMode(int event_id)
+        {
+            DataAccessResult result = _dataAccess.RemoveEvent(event_id);
             if (!result.error)
             {
                 return Ok(result.returnObject);

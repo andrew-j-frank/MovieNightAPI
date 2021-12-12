@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 
 namespace MovieNightAPI.Models
 {
-    public class VotingMode
+    public class IsComing
     {
-        public int voting_mode { get; set; }
+        public Boolean is_coming { get; set; }
     }
 }

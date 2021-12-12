@@ -1131,8 +1131,43 @@ Movie Night Team";
             {
                 try
                 {
-                    var event_id = connection.QuerySingle<int>($"insert into events (group_id, start_time, location, genre, tmdb_movie_id, organized_by, voting_mode) OUTPUT INSERTED.event_id values (@group_id, @start_time, @location, @genre, @tmdb_movie_id, @organized_by, @voting_mode)", new { group_id = group_event.group_id, start_time = group_event.start_time, location = group_event.location, genre = group_event.genre, tmdb_movie_id = group_event.tmdb_movie_id, organized_by = group_event.organized_by, voting_mode = group_event.voting_mode });
+                    // Add the event to the events table
+                    var event_id = connection.QuerySingle<int>($"insert into events (group_id, start_time, location, tmdb_movie_id, organized_by, voting_mode) OUTPUT INSERTED.event_id values (@group_id, @start_time, @location, @tmdb_movie_id, @organized_by, @voting_mode)", new { group_id = group_event.group_id, start_time = group_event.start_time, location = group_event.location, tmdb_movie_id = group_event.tmdb_movie_id, organized_by = group_event.organized_by, voting_mode = group_event.voting_mode });
                     group_event.event_id = event_id;
+
+                    // Add genres to event_genres
+                    for (int i = 0; i < group_event.genres.Length; i++)
+                    {
+                        var rows = connection.Execute($"insert into event_genres (event_id, genre) values (@event_id,@genre)", new { event_id = group_event.event_id, genre = group_event.genres[i] });
+                        if (rows != 1)
+                        {
+                            return new DataAccessResult()
+                            {
+                                error = true,
+                                statusCode = 500,
+                                message = "Genre could not be added for event."
+                            };
+
+                        }
+                    }
+
+                    // Add streaming services to event_services
+                    for (int i = 0; i < group_event.genres.Length; i++)
+                    {
+                        var rows = connection.Execute($"insert into event_services (event_id,service) values (@event_id,@service)", new { event_id = group_event.event_id, service = group_event.services[i] });
+                        if (rows != 1)
+                        {
+                            return new DataAccessResult()
+                            {
+                                error = true,
+                                statusCode = 500,
+                                message = "Streaming service could not be added for event."
+                            };
+
+                        }
+                    }
+
+                    // Return the newly created event
                     return new DataAccessResult()
                     {
                         returnObject = group_event
@@ -1148,6 +1183,15 @@ Movie Night Team";
                         message = ex.Message
                     };
                 }
+                catch (NullReferenceException)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        message = "Either the Services or Genres list was empty."
+                    };
+                }
             }
         }
 
@@ -1159,6 +1203,11 @@ Movie Night Team";
                 try
                 {
                     GroupEvent group_event = connection.QuerySingle<GroupEvent>($"select * from events where event_id = @event_id", new { event_id = event_id });
+                    int[] services = connection.Query<int>($"select service from event_services where event_id = @event_id", new { event_id = event_id }).ToArray<int>();
+                    int[] genres = connection.Query<int>($"select genre from event_genres where event_id = @event_id", new { event_id = event_id }).ToArray<int>();
+                    group_event.genres = genres;
+                    group_event.services = services;
+
                     return new DataAccessResult()
                     {
                         returnObject = group_event
@@ -1290,8 +1339,13 @@ Movie Night Team";
             {
                 try
                 {
+                    // Get list of all users who have RSVP'd to the event
+                    IEnumerable<int> users = connection.Query<int>($"select user_id from rsvp where event_id = @event_id and is_coming = 1", new { event_id = event_id });
+
+                    // Iterate over all movies to add
                     for (int i = 0; i < movie_ids.movie_ids.Count; i++)
                     {
+                        // Add the movie to the event
                         var rows = connection.Execute($"insert into event_movies (event_id,tmdb_movie_id) values (@event_id,@tmdb_movie_id)", new { event_id = event_id, tmdb_movie_id = movie_ids.movie_ids[i] });
                         if  (rows != 1)
                         {
@@ -1302,8 +1356,32 @@ Movie Night Team";
                                 message = "Movie could not be added to event."
                             };
                         }
-                    }
 
+                        // Rate this movie a 2 for all users
+                        for (int j = 0; j < users.Count(); j++)
+                        {
+                            EventMovieRatings event_movie_ratings = new EventMovieRatings();
+                            event_movie_ratings.event_id = event_id;
+                            event_movie_ratings.user_id = users.ElementAt(j);
+                            event_movie_ratings.tmdb_movie_id = movie_ids.movie_ids[i];
+                            event_movie_ratings.rating = 2;
+
+                            DataAccessResult add_rating = RateMovieEvent(event_movie_ratings);
+                            if (add_rating.error)
+                            {
+                                return new DataAccessResult()
+                                {
+                                    error = true,
+                                    statusCode = 500,
+                                    // TODO: Change message for final version 
+                                    message = add_rating.message
+                                };
+                            }
+                        }
+
+                    }
+                    
+                    // Get a list of all movies in the event to return
                     IEnumerable<EventMovies> all_movies = connection.Query<EventMovies>($"select * from event_movies where event_id = @event_id", new { event_id = event_id });
                     return new DataAccessResult()
                     {
@@ -1325,16 +1403,16 @@ Movie Night Team";
         }
 
         // event
-        public DataAccessResult GetMoviesEvent(int event_id)
+        public DataAccessResult GetMoviesEventUser(int event_id, int user_id)
         {
             using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
             {
                 try
                 {
-                    IEnumerable<int> movies = connection.Query<int>($"select tmdb_movie_id from event_movies where event_id = @event_id", new { event_id = event_id });
+                    IEnumerable<EventMovieRatings> user_ratings = connection.Query<EventMovieRatings>($"select tmdb_movie_id, rating from event_movie_ratings where event_id = @event_id and user_id = @user_id", new { event_id = event_id, user_id = user_id });
                     return new DataAccessResult()
                     {
-                        returnObject = movies
+                        returnObject = user_ratings
                     };
                 }
                 catch (SqlException ex)
@@ -1405,13 +1483,67 @@ Movie Night Team";
         }
 
         // event
+        public DataAccessResult UpdateEventMovieRating(EventMovieRatings event_movie_ratings)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    // Check if the movie and event_id combination is in event_movie
+                    int exists = connection.QuerySingle<int>($"select count(*) from event_movies where event_id = @event_id and tmdb_movie_id = @tmdb_movie_id", new { event_id = event_movie_ratings.event_id, tmdb_movie_id = event_movie_ratings.tmdb_movie_id });
+                    if (exists == 0)
+                    {
+                        // This movie has not been added to this event!
+                        return new DataAccessResult()
+                        {
+                            error = true,
+                            statusCode = 500,
+                            message = "The movie that was rated has not been added to this event."
+                        };
+                    }
+
+                    var rows = connection.Execute($"update event_movie_ratings set rating = @rating where tmdb_movie_id = @tmdb_movie_id and user_id = @user_id and event_id = @event_id", new { event_id = event_movie_ratings.event_id, user_id = event_movie_ratings.user_id, tmdb_movie_id = event_movie_ratings.tmdb_movie_id, rating = event_movie_ratings.rating });
+                    if (rows == 1)
+                    {
+
+                        IEnumerable<EventMovieRatings> ratings = connection.Query<EventMovieRatings>($"select * from event_movie_ratings where event_id = @event_id", new { event_id = event_movie_ratings.event_id });
+                        return new DataAccessResult()
+                        {
+                            returnObject = ratings
+                        };
+
+                    }
+                    else
+                    {
+                        return new DataAccessResult()
+                        {
+                            error = true,
+                            statusCode = 500,
+                            message = "multiple rows changed. THIS SHOULD NEVER HAPPEN"
+                        };
+                    }
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
+
+        // event
         public DataAccessResult GetEventRating(int event_id)
         {
             using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
             {
                 try
                 {
-                    IEnumerable<EventMovieRatings> ratings = connection.Query<EventMovieRatings>($"select * from event_movie_ratings where event_id = @event_id", new { event_id = event_id });
+                    IEnumerable<EventMovieAverageRatings> ratings = connection.Query<EventMovieAverageRatings>($"select tmdb_movie_id, avg(cast(rating as float)) as avg_rating from event_movie_ratings where event_id = @event_id group by tmdb_movie_id", new { event_id = event_id });
                     return new DataAccessResult()
                     {
                         returnObject = ratings
@@ -1425,6 +1557,111 @@ Movie Night Team";
                         statusCode = 500,
                         // TODO: Change message for final version 
                         message = ex.Message
+                    };
+                }
+            }
+        }
+
+        // event
+        public DataAccessResult ChangeEventVotingMode (int event_id, VotingMode voting_mode)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    // Add the movie to the event
+                    var rows = connection.Execute($"update events set voting_mode = @voting_mode where event_id = @event_id", new { voting_mode = voting_mode.voting_mode, event_id = event_id });
+                    if (rows != 1)
+                    {
+                        return new DataAccessResult()
+                        {
+                            error = true,
+                            statusCode = 500,
+                            message = "Voting mode couls not be changed."
+                        };
+                    }
+
+                    GroupEvent ret_event = connection.QuerySingle<GroupEvent>($"select * from events where event_id = @event_id", new { event_id = event_id });
+                    return new DataAccessResult()
+                    {
+                        returnObject = ret_event
+                    };
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
+
+        // event
+        public DataAccessResult RemoveEvent (int event_id)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    // Get the event to return it after deletion
+                    GroupEvent ret_event = connection.QuerySingle<GroupEvent>($"select * from events where event_id = @event_id", new { event_id = event_id });
+
+                    // Delete all user ratings for the event
+                    var rows = connection.Execute($"delete from event_movie_ratings where event_id = @event_id", new { event_id = event_id });
+
+                    // Delete all movies for this event
+                    rows = connection.Execute($"delete from event_movies where event_id = @event_id", new { event_id = event_id });
+
+                    // Delete all RSVP's
+                    rows = connection.Execute($"delete from rsvp where event_id = @event_id", new { event_id = event_id });
+
+                    // Delete all services
+                    rows = connection.Execute($"delete from event_services where event_id = @event_id", new { event_id = event_id });
+
+                    // Delete all genres
+                    rows = connection.Execute($"delete from event_genres where event_id = @event_id", new { event_id = event_id });
+
+                    // Delete this event
+                    rows = connection.Execute($"delete from events where event_id = @event_id", new { event_id = event_id });
+                    if (rows == 1)
+                    {
+                        return new DataAccessResult()
+                        {
+                            returnObject = ret_event
+                        };
+                    }
+                    else
+                    {
+                        return new DataAccessResult()
+                        {
+                            error = true,
+                            statusCode = 500,
+                            message = "The specified event does not exist."
+                        };
+                    }
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message + ". Ensure that the given event exists."
                     };
                 }
             }

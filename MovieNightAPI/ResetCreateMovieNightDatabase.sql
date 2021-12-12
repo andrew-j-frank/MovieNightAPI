@@ -50,7 +50,6 @@ CREATE TABLE events (
 	group_id INT NOT NULL,
 	start_time DATETIME NOT NULL,
 	location VARCHAR(50) NOT NULL,
-	genre INT NOT NULL,
 	tmdb_movie_id INT,
 	organized_by INT NOT NULL,
 	voting_mode INT NOT NULL,
@@ -106,4 +105,20 @@ CREATE TABLE rsvp (
 	FOREIGN KEY (event_id) REFERENCES events (event_id),
 	FOREIGN KEY (user_id) REFERENCES users (user_id),
 	PRIMARY KEY(event_id, user_id)
+);
+
+-- Create the event_genres table
+CREATE TABLE event_genres (
+	event_id INT,
+	genre INT,
+	FOREIGN KEY (event_id) REFERENCES events (event_id),
+	PRIMARY KEY(event_id, genre)
+);
+
+-- Create the event_services table
+CREATE TABLE event_services (
+	event_id INT,
+	service INT,
+	FOREIGN KEY (event_id) REFERENCES events (event_id),
+	PRIMARY KEY(event_id, service)
 );

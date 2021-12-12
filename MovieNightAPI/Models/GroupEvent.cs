@@ -11,9 +11,10 @@ namespace MovieNightAPI.Models
         public int group_id { get; set; }
         public DateTime start_time { get; set; }
         public string location { get; set; }
-        public int genre { get; set; }
+        public int[] genres { get; set; }
         public int tmdb_movie_id { get; set; }
         public int organized_by { get; set; }
         public int voting_mode { get; set; }
+        public int[] services { get; set; }
     }
 }

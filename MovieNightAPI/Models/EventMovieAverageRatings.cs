@@ -5,8 +5,9 @@ using System.Threading.Tasks;
 
 namespace MovieNightAPI.Models
 {
-    public class VotingMode
+    public class EventMovieAverageRatings
     {
-        public int voting_mode { get; set; }
+        public int tmdb_movie_id { get; set; }
+        public double avg_rating { get; set; }
     }
 }
