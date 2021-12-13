@@ -1,4 +1,6 @@
-﻿DROP TABLE rsvp
+DROP TABLE event_genres
+DROP TABLE event_services
+DROP TABLE rsvp
 DROP TABLE event_movies
 DROP TABLE event_movie_ratings
 DROP TABLE group_movie_ratings
@@ -7,8 +9,6 @@ DROP TABLE events
 DROP TABLE group_users
 DROP TABLE groups
 DROP TABLE users
-DROP TABLE event_genres
-DROP TABLE event_services
 
 -- Create the users table
 CREATE TABLE users (
