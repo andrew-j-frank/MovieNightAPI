@@ -1238,6 +1238,35 @@ Movie Night Team";
                     var rows = connection.Execute($"insert into rsvp (user_id,event_id,is_coming) values (@user_id,@event_id,@is_coming)", new { user_id = rsvp.user_id, event_id = rsvp.event_id, is_coming = rsvp.is_coming });
                     if (rows == 1)
                     {
+                        int num_movies = connection.QuerySingle<int>("select count(*) from event_movies where event_id = @event_id", new { event_id = rsvp.event_id });
+                        // Check if there are movies already added to this event
+                        if (num_movies > 0)
+                        {
+                            IEnumerable<EventMovies> movies = connection.Query<EventMovies>($"select * from event_movies where event_id = @event_id", new { event_id = rsvp.event_id });
+                            // Iterate over all movies
+                            for (int i = 0; i < movies.Count(); i++)
+                            {
+                                EventMovieRatings event_movie_ratings = new EventMovieRatings();
+                                event_movie_ratings.event_id = rsvp.event_id;
+                                event_movie_ratings.user_id = rsvp.user_id;
+                                event_movie_ratings.tmdb_movie_id = movies.ElementAt(i).tmdb_movie_id;
+                                event_movie_ratings.rating = 2;
+
+                                // Attempt to rate the movie a 2 for this user
+                                DataAccessResult add_rating = RateMovieEvent(event_movie_ratings);
+                                if (add_rating.error)
+                                {
+                                    return new DataAccessResult()
+                                    {
+                                        error = true,
+                                        statusCode = 500,
+                                        // TODO: Change message for final version 
+                                        message = add_rating.message
+                                    };
+                                }
+                            }
+                        }
+      
                         IEnumerable<RSVP> all_rsvp = connection.Query<RSVP>($"select * from rsvp where event_id = @event_id", new { event_id = rsvp.event_id });
                         return new DataAccessResult()
                         {
@@ -1303,6 +1332,14 @@ Movie Night Team";
                     var rows = connection.Execute($"update rsvp set is_coming = @is_coming where user_id = @user_id and event_id = @event_id", new { is_coming = is_coming.is_coming, user_id = user_id, event_id = event_id });
                     if (rows == 1)
                     {
+                        int num_movies = connection.QuerySingle<int>("select count(*) from event_movies where event_id = @event_id", new { event_id = event_id });
+                        // Check if there are movies already added to this event
+                        if (num_movies > 0)
+                        {
+                            // Remove all ratings for this user
+                            rows = connection.Execute($"delete from event_movie_ratings where event_id = @event_id and user_id = @user_id", new { event_id = event_id, user_id = user_id });
+                        }
+
                         IEnumerable<RSVP> all_rsvp = connection.Query<RSVP>($"select * from rsvp where event_id = @event_id", new { event_id = event_id });
                         return new DataAccessResult()
                         {
