@@ -7,6 +7,6 @@ namespace MovieNightAPI.Models
 {
     public class MovieIDList
     {
-        public List<int> movie_ids { get; set; }
+        public int[] movie_ids { get; set; }
     }
 }
