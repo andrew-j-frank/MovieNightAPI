@@ -1380,10 +1380,10 @@ Movie Night Team";
                     IEnumerable<int> users = connection.Query<int>($"select user_id from rsvp where event_id = @event_id and is_coming = 1", new { event_id = event_id });
 
                     // Iterate over all movies to add
-                    for (int i = 0; i < movie_ids.movie_ids.Length; i++)
+                    for (int i = 0; i < movie_ids.tmdb_movie_ids.Length; i++)
                     {
                         // Add the movie to the event
-                        var rows = connection.Execute($"insert into event_movies (event_id,tmdb_movie_id) values (@event_id,@tmdb_movie_id)", new { event_id = event_id, tmdb_movie_id = movie_ids.movie_ids[i] });
+                        var rows = connection.Execute($"insert into event_movies (event_id,tmdb_movie_id) values (@event_id,@tmdb_movie_id)", new { event_id = event_id, tmdb_movie_id = movie_ids.tmdb_movie_ids[i] });
                         if  (rows != 1)
                         {
                             return new DataAccessResult()
@@ -1400,7 +1400,7 @@ Movie Night Team";
                             EventMovieRatings event_movie_ratings = new EventMovieRatings();
                             event_movie_ratings.event_id = event_id;
                             event_movie_ratings.user_id = users.ElementAt(j);
-                            event_movie_ratings.tmdb_movie_id = movie_ids.movie_ids[i];
+                            event_movie_ratings.tmdb_movie_id = movie_ids.tmdb_movie_ids[i];
                             event_movie_ratings.rating = 2;
 
                             DataAccessResult add_rating = RateMovieEvent(event_movie_ratings);
