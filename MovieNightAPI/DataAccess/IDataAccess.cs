@@ -73,7 +73,10 @@ namespace MovieNightAPI.DataAccess
         public DataAccessResult ChangeGroupName(int group_id, string group_name);
 
         public DataAccessResult GenerateNewCode(int group_id);
+
         public DataAccessResult ForgotPassword(string username);
+
+        public DataAccessResult ChangeEventMovie(int event_id, int tmdb_movie_id);
 
         public bool CheckClaims(ClaimsIdentity identity, int user_id, int group_id, bool adminOnly, bool adminAllowed);
     }

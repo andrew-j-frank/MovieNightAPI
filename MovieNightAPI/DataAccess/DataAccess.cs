@@ -1637,6 +1637,43 @@ Movie Night Team";
             }
         }
 
+        public DataAccessResult ChangeEventMovie(int event_id, int tmdb_movie_id)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    // Add the movie to the event
+                    var rows = connection.Execute($"update events set tmdb_movie_id = @tmdb_movie_id where event_id = @event_id", new { tmdb_movie_id = tmdb_movie_id, event_id = event_id });
+                    if (rows != 1)
+                    {
+                        return new DataAccessResult()
+                        {
+                            error = true,
+                            statusCode = 500,
+                            message = "Event movie mode could not be changed."
+                        };
+                    }
+
+                    GroupEvent ret_event = connection.QuerySingle<GroupEvent>($"select * from events where event_id = @event_id", new { event_id = event_id });
+                    return new DataAccessResult()
+                    {
+                        returnObject = ret_event
+                    };
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
+
         // event
         public DataAccessResult RemoveEvent (int event_id)
         {

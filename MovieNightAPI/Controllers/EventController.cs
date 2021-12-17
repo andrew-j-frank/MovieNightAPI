@@ -194,6 +194,22 @@ namespace SpikeExerciseAPI.Controllers
             }
         }
 
+        // PATCH /event/{event_id}/movie
+        [ProducesResponseType(typeof(GroupEvent), StatusCodes.Status200OK)]
+        [HttpPatch("{event_id}/movie")]
+        public IActionResult ChangeEventMovie(int event_id, [FromBody] MovieID tmdb_movie_id)
+        {
+            DataAccessResult result = _dataAccess.ChangeEventMovie(event_id, tmdb_movie_id.tmdb_movie_id);
+            if (!result.error)
+            {
+                return Ok(result.returnObject);
+            }
+            else
+            {
+                return StatusCode(result.statusCode, new { message = result.message });
+            }
+        }
+
         #endregion
 
         #region DELETE
