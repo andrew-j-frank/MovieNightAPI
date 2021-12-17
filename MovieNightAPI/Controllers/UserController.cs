@@ -132,6 +132,23 @@ namespace MovieNightAPI.Controllers
             }
         }
 
+        // PATCH /user/{user_id}/password
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(User), StatusCodes.Status200OK)]
+        [HttpPatch("{user_id}/password")]
+        public IActionResult ChangePassword(int user_id, [FromBody] Password password)
+        {
+            var result = _dataAccess.ChangePassword(user_id, password.password);
+            if (!result.error)
+            {
+                return Ok(result.returnObject);
+            }
+            else
+            {
+                return StatusCode(result.statusCode, new { message = result.message });
+            }
+        }
+
         // PATCH /user/forgot_password
         [AllowAnonymous]
         [ProducesResponseType(typeof(MovieRatings), StatusCodes.Status200OK)]

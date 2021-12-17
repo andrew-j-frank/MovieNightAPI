@@ -796,6 +796,35 @@ namespace MovieNightAPI.DataAccess
             }
         }
 
+        public DataAccessResult ChangePassword(int user_id, string password)
+        {
+            var salt = GenerateSalt();
+            var hashedPassword = GenerateSaltedHash(password, salt);
+
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    connection.Execute($"update users set password = @password, salt = @salt where user_id = @user_id;", new { password = hashedPassword, salt = salt, user_id = user_id });
+                    UserDB user = connection.QuerySingle<UserDB>($"select * from users where user_id = @user_id", new { user_id = user_id });
+                    return new DataAccessResult()
+                    {
+                        returnObject = User.UserDBToUser(user)
+                    };
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+            }
+        }
+
         // user
         public DataAccessResult GetGroups(int user_id)
         {

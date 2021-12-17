@@ -80,6 +80,8 @@ namespace MovieNightAPI.DataAccess
 
         public DataAccessResult RemoveEventMovies(int event_id);
 
+        public DataAccessResult ChangePassword(int user_id, string password);
+
         public bool CheckClaims(ClaimsIdentity identity, int user_id, int group_id, bool adminOnly, bool adminAllowed);
     }
 }
