@@ -78,6 +78,8 @@ namespace MovieNightAPI.DataAccess
 
         public DataAccessResult ChangeEventMovie(int event_id, int tmdb_movie_id);
 
+        public DataAccessResult RemoveEventMovies(int event_id);
+
         public bool CheckClaims(ClaimsIdentity identity, int user_id, int group_id, bool adminOnly, bool adminAllowed);
     }
 }

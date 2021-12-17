@@ -217,9 +217,25 @@ namespace SpikeExerciseAPI.Controllers
         // Delete /event/{event_id}
         [ProducesResponseType(typeof(GroupEvent), StatusCodes.Status200OK)]
         [HttpDelete("{event_id}")]
-        public IActionResult ChangeVotingMode(int event_id)
+        public IActionResult DeleteEvent(int event_id)
         {
             DataAccessResult result = _dataAccess.RemoveEvent(event_id);
+            if (!result.error)
+            {
+                return Ok(result.returnObject);
+            }
+            else
+            {
+                return StatusCode(result.statusCode, new { message = result.message });
+            }
+        }
+
+        // Delete /event/{event_id}/movies
+        [ProducesResponseType(typeof(IEnumerable<EventMovies>), StatusCodes.Status200OK)]
+        [HttpDelete("{event_id}/movies")]
+        public IActionResult DeleteEventMovies(int event_id)
+        {
+            DataAccessResult result = _dataAccess.RemoveEventMovies(event_id);
             if (!result.error)
             {
                 return Ok(result.returnObject);

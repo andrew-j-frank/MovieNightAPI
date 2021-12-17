@@ -1758,6 +1758,61 @@ Movie Night Team";
             }
         }
 
+        public DataAccessResult RemoveEventMovies(int event_id)
+        {
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("SQLServer")))
+            {
+                try
+                {
+                    // Get a list of all movies in the event to return
+                    IEnumerable<EventMovies> all_movies = connection.Query<EventMovies>($"select * from event_movies where event_id = @event_id", new { event_id = event_id });
+
+                    // Delete all user ratings for the event
+                    var rows = connection.Execute($"delete from event_movie_ratings where event_id = @event_id", new { event_id = event_id });
+
+                    // Delete all movies for this event
+                    rows = connection.Execute($"delete from event_movies where event_id = @event_id", new { event_id = event_id });
+
+                    if (rows == 1)
+                    {
+                        return new DataAccessResult()
+                        {
+                            returnObject = all_movies
+                        };
+                    }
+                    else
+                    {
+                        return new DataAccessResult()
+                        {
+                            error = true,
+                            statusCode = 500,
+                            message = "The specified event does not exist."
+                        };
+                    }
+                }
+                catch (SqlException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message
+                    };
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return new DataAccessResult()
+                    {
+                        error = true,
+                        statusCode = 500,
+                        // TODO: Change message for final version 
+                        message = ex.Message + ". Ensure that the given event exists."
+                    };
+                }
+            }
+        }
+
         #endregion
 
         #region Authorization Checks
