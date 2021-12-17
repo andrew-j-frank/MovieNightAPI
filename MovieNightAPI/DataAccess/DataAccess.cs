@@ -1606,23 +1606,40 @@ Movie Night Team";
             {
                 try
                 {
-                    // Add the movie to the event
-                    var rows = connection.Execute($"update events set voting_mode = @voting_mode where event_id = @event_id", new { voting_mode = voting_mode.voting_mode, event_id = event_id });
-                    if (rows != 1)
+                    // Get the group_id for the event
+                    int group_id = connection.QuerySingle<int>($"select group_id from events where event_id = @event_id", new { event_id = event_id });
+                    // See if there are any more events in that group that are in voting
+                    int exists = connection.QuerySingle<int>($"select count(*) from events where group_id = @group_id and voting_mode = 1", new { group_id = group_id });
+                    // If no event is in voting or we are setting an event to not voting then update the event
+                    if(exists <= 0 || voting_mode.voting_mode == 0)
+                    {
+                        // Add the movie to the event
+                        var rows = connection.Execute($"update events set voting_mode = @voting_mode where event_id = @event_id", new { voting_mode = voting_mode.voting_mode, event_id = event_id });
+                        if (rows != 1)
+                        {
+                            return new DataAccessResult()
+                            {
+                                error = true,
+                                statusCode = 500,
+                                message = "Voting mode couls not be changed."
+                            };
+                        }
+
+                        GroupEvent ret_event = connection.QuerySingle<GroupEvent>($"select * from events where event_id = @event_id", new { event_id = event_id });
+                        return new DataAccessResult()
+                        {
+                            returnObject = ret_event
+                        };
+                    }
+                    else
                     {
                         return new DataAccessResult()
                         {
                             error = true,
                             statusCode = 500,
-                            message = "Voting mode couls not be changed."
+                            message = "Voting is already enabled for another event in this group."
                         };
                     }
-
-                    GroupEvent ret_event = connection.QuerySingle<GroupEvent>($"select * from events where event_id = @event_id", new { event_id = event_id });
-                    return new DataAccessResult()
-                    {
-                        returnObject = ret_event
-                    };
                 }
                 catch (SqlException ex)
                 {
