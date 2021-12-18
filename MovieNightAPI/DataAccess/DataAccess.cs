@@ -1650,7 +1650,7 @@ Movie Night Team";
                             {
                                 error = true,
                                 statusCode = 500,
-                                message = "Voting mode couls not be changed."
+                                message = "Voting mode could not be changed."
                             };
                         }
 
@@ -1802,7 +1802,7 @@ Movie Night Team";
                     // Delete all movies for this event
                     rows = connection.Execute($"delete from event_movies where event_id = @event_id", new { event_id = event_id });
 
-                    if (rows == 1)
+                    if (rows > 0)
                     {
                         return new DataAccessResult()
                         {
